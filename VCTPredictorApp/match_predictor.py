@@ -113,4 +113,18 @@ def main():
     # Try to find the closest matching team names
     team1 = fuzzy_lookup(team1_input, teams)
     team2 = fuzzy_lookup(team2_input, teams)
-    print(f"Matched input to: {team1} vs {team2}
+    print(f"Matched input to: {team1} vs {team2}")
+
+
+    # If either team is not found, show error and available teams
+    if not team1 or not team2:
+        print("Error: One or both team names not recognized.")
+        print("Available teams:", ", ".join(sorted(teams.keys())))        
+        return
+
+    # Make and display the prediction
+    predict(team1, team2, teams)
+
+# Run the main function if this script is executed directly
+if __name__ == "__main__":
+    main()
