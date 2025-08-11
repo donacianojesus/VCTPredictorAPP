@@ -180,8 +180,8 @@ def index():
 if __name__ == '__main__':
     print("Starting VCT Match Predictor Web App...")
     print("Open your browser to: http://localhost:5000")
+    print("Or http://127.0.0.1:5000/ on macOS")
     print("Press Ctrl+C to stop the server")
     
     # Run the Flask app
-    # My reasoning: debug=True so I can see errors easily during development
     app.run(debug=True, host='localhost', port=5000)
