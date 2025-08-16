@@ -2,12 +2,17 @@ from predictor import DynamicPredictor
 from flask import Flask, render_template, request
 from db import MatchDatabase
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 
-# Initialize DB and predictor once
-db = MatchDatabase('val_standings.db')
-predictor = DynamicPredictor('val_standings.db')
+# Get absolute path to database
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "val_standings.db")
+
+# Initialize DB and predictor once with absolute path
+db = MatchDatabase(DB_PATH)
+predictor = DynamicPredictor(DB_PATH)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():

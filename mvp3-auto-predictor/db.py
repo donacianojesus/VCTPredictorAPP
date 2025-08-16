@@ -2,70 +2,55 @@
 
 import sqlite3
 import logging
+import os
 from datetime import datetime, timedelta
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class MatchDatabase:
     def __init__(self, db_path='val_standings.db'):
         self.db_path = db_path
         self.init_database()
-    
-    def init_database(self):
-        """Initialize the database with required tables"""
-        logger.debug(f"Initializing database at {self.db_path}")
         
+    def init_database(self):
+        """Initialize database with required tables"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
         try:
-            # Create group_standings table
-            cursor.execute('''
+            # Create group standings table
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS group_standings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     group_name TEXT NOT NULL,
                     team TEXT NOT NULL,
                     record TEXT NOT NULL,
-                    map_diff TEXT DEFAULT '0/0',
-                    round_diff TEXT DEFAULT '0/0',
-                    delta INTEGER DEFAULT 0,
+                    map_diff TEXT NOT NULL,
+                    round_diff TEXT NOT NULL,
+                    delta REAL NOT NULL,
                     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(group_name, team)
                 )
-            ''')
-            
-            # Create matches table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS matches (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    match_id TEXT,
-                    date TEXT NOT NULL,
-                    team1 TEXT NOT NULL,
-                    team2 TEXT NOT NULL,
-                    team1_score INTEGER NOT NULL,
-                    team2_score INTEGER NOT NULL,
-                    map_name TEXT,
-                    tournament TEXT,
-                    created_at TEXT
-                )
-            ''')
-            
-            # Create data_updates table
-            cursor.execute('''
+            """)
+
+            # Create data updates tracking table
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS data_updates (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    update_date TEXT NOT NULL,
-                    matches_added INTEGER DEFAULT 0,
-                    status TEXT DEFAULT 'success',
-                    created_at TEXT
+                    update_date DATE NOT NULL,
+                    matches_added INTEGER NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            ''')
+            """)
             
             conn.commit()
-            logger.debug("Database initialized successfully")
+            logger.debug(f"Database initialized at {self.db_path}")
+            
         except Exception as e:
-            logger.error(f"Error initializing database: {e}")
+            logger.error(f"Database initialization failed: {str(e)}")
+            raise
+            
         finally:
             conn.close()
     
