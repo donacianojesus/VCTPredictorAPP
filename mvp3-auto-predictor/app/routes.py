@@ -42,6 +42,63 @@ def api_health():
             'success_rate': 0
         }), 500
 
+@main_bp.route('/api/init-db')
+def init_database():
+    """Initialize database with sample data (for Railway deployment)"""
+    try:
+        # Sample team data for VCT Americas
+        sample_teams = [
+            # Group Alpha
+            {'group_name': 'Alpha', 'team': 'Sentinels', 'record': '4-1', 'map_diff': '8/2', 'round_diff': '104/78', 'delta': 26.0},
+            {'group_name': 'Alpha', 'team': 'LOUD', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '98/82', 'delta': 16.0},
+            {'group_name': 'Alpha', 'team': '100 Thieves', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '92/88', 'delta': 4.0},
+            {'group_name': 'Alpha', 'team': 'NRG', 'record': '2-3', 'map_diff': '4/6', 'round_diff': '86/94', 'delta': -8.0},
+            {'group_name': 'Alpha', 'team': 'Cloud9', 'record': '2-3', 'map_diff': '4/6', 'round_diff': '84/96', 'delta': -12.0},
+            {'group_name': 'Alpha', 'team': 'MIBR', 'record': '1-4', 'map_diff': '2/8', 'round_diff': '76/104', 'delta': -28.0},
+            
+            # Group Omega
+            {'group_name': 'Omega', 'team': 'Leviatán', 'record': '4-1', 'map_diff': '8/2', 'round_diff': '102/76', 'delta': 26.0},
+            {'group_name': 'Omega', 'team': 'KRÜ', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '96/84', 'delta': 12.0},
+            {'group_name': 'Omega', 'team': 'FURIA', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '94/86', 'delta': 8.0},
+            {'group_name': 'Omega', 'team': 'Evil Geniuses', 'record': '2-3', 'map_diff': '4/6', 'round_diff': '88/92', 'delta': -4.0},
+            {'group_name': 'Omega', 'team': 'G2 Esports', 'record': '2-3', 'map_diff': '4/6', 'round_diff': '86/94', 'delta': -8.0},
+            {'group_name': 'Omega', 'team': 'Shopify Rebellion', 'record': '1-4', 'map_diff': '2/8', 'round_diff': '78/102', 'delta': -24.0}
+        ]
+        
+        # Insert sample teams
+        for team_data in sample_teams:
+            current_app.db.insert_match_data(
+                group=team_data['group_name'],
+                team=team_data['team'],
+                record=team_data['record'],
+                map_diff=team_data['map_diff'],
+                round_diff=team_data['round_diff'],
+                delta=team_data['delta']
+            )
+        
+        # Initialize scraper health
+        current_app.db.update_scraper_health(
+            status='idle',
+            success_count=0,
+            total_runs=0
+        )
+        
+        # Verify data
+        teams = current_app.db.get_all_teams_with_stats()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Database initialized with {len(teams)} teams',
+            'teams_count': len(teams),
+            'scraper_status': 'idle'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @main_bp.route('/', methods=['GET', 'POST'])
 def index():
     """Main page with team selection and predictions"""
