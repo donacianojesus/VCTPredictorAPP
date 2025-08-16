@@ -31,7 +31,7 @@
                             <span class="team-record-standings">REC: {{ team.record }}</span>
                             <span class="team-record-standings">MAP: {{ team.map_diff }}</span>
                             <span class="team-record-standings">RND: {{ team.round_diff }}</span>
-                            <span class="team-winrate {% if team.delta > 0 %}delta-positive{% elif team.delta < 0 %}delta-negative{% else %}delta-zero{% endif %}">Δ: {{ team.delta }}</span>
+                            <span class="team-record-standings {% if team.delta > 0 %}delta-positive{% elif team.delta < 0 %}delta-negative{% else %}delta-zero{% endif %}">Δ: {{ team.delta }}</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -115,7 +115,7 @@
                 
                 <div class="team-stats">
                     <div class="team-stat">
-                        <div class="team-name">{{ prediction.team1|title }}</div>
+                        <div class="team-name">{{ prediction.team1|upper }}</div>
                         <div class="win-rate">
                             Win Rate: {{ "%.1f"|format(prediction.team1_win_rate * 100) }}%
                         </div>
@@ -130,7 +130,7 @@
                     <div class="vs" aria-hidden="true">VS</div>
                     
                     <div class="team-stat">
-                        <div class="team-name">{{ prediction.team2|title }}</div>
+                        <div class="team-name">{{ prediction.team2|upper }}</div>
                         <div class="win-rate">
                             Win Rate: {{ "%.1f"|format(prediction.team2_win_rate * 100) }}%
                         </div>
@@ -144,7 +144,7 @@
                 </div>
                 
                 <div class="winner" role="alert">
-                     Predicted Winner: {{ prediction.predicted_winner|title }}
+                     Predicted Winner: {{ prediction.predicted_winner|upper }}
                     <br>
                     <span class="confidence-text">
                         ({{ "%.0f"|format(prediction.confidence * 100) }}% confidence)
@@ -158,6 +158,30 @@
             {% if last_updated %}
                 Last updated: {{ last_updated.strftime('%Y-%m-%d %H:%M UTC') }}
             {% endif %}
+        </div>
+        
+        <!-- Scraper Health Status -->
+        <div class="health-status">
+            <h3 class="health-title">🔄 Auto-Scraper Status</h3>
+            <div class="health-grid">
+                <div class="health-item">
+                    <span class="health-label">Last Run:</span>
+                    <span class="health-value" id="lastRun">Loading...</span>
+                </div>
+                <div class="health-item">
+                    <span class="health-label">Status:</span>
+                    <span class="health-value" id="scraperStatus">Loading...</span>
+                </div>
+                <div class="health-item">
+                    <span class="health-label">Success Rate:</span>
+                    <span class="health-value" id="successRate">Loading...</span>
+                </div>
+                <div class="health-item">
+                    <span class="health-label">Total Runs:</span>
+                    <span class="health-value" id="totalRuns">Loading...</span>
+                </div>
+            </div>
+            <div class="health-message" id="healthMessage"></div>
         </div>
         
         <!-- Instructions for first-time users -->

@@ -1,3 +1,19 @@
+// Enhanced VCT Match Predictor JavaScript
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize health monitoring
+    loadScraperHealth();
+    
+    // Set up form validation and submission
+    setupFormValidation();
+    
+    // Initialize team group filtering
+    initializeTeamGroups();
+    
+    // Auto-refresh health status every 30 seconds
+    setInterval(loadScraperHealth, 30000);
+});
+
 // Get team group information from the page
 const teamGroups = {};
 
@@ -97,48 +113,121 @@ function handleTeam2Change() {
     }
 }
 
-// Form validation
-function validateForm() {
-    const team1 = document.getElementById('team1').value;
-    const team2 = document.getElementById('team2').value;
+function loadScraperHealth() {
+    fetch('/api/health')
+        .then(response => response.json())
+        .then(data => {
+            updateHealthDisplay(data);
+        })
+        .catch(error => {
+            console.error('Failed to load health data:', error);
+            updateHealthDisplay({
+                status: 'error',
+                message: 'Failed to load health data',
+                last_run: 'Unknown',
+                success_count: 0,
+                total_runs: 0
+            });
+        });
+}
+
+function updateHealthDisplay(healthData) {
+    // Update health values
+    document.getElementById('lastRun').textContent = formatLastRun(healthData.last_run);
+    document.getElementById('scraperStatus').textContent = healthData.status;
+    document.getElementById('successRate').textContent = calculateSuccessRate(healthData.success_count, healthData.total_runs);
+    document.getElementById('totalRuns').textContent = healthData.total_runs;
+    
+    // Update health message
+    const healthMessage = document.getElementById('healthMessage');
+    healthMessage.textContent = healthData.message || '';
+    
+    // Update status colors
+    updateStatusColors(healthData.status);
+}
+
+function formatLastRun(lastRun) {
+    if (!lastRun || lastRun === 'Unknown') return 'Unknown';
+    
+    try {
+        const date = new Date(lastRun);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
+        
+        if (diffDays > 0) {
+            return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        } else if (diffHours > 0) {
+            return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        } else {
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+        }
+    } catch (e) {
+        return 'Unknown';
+    }
+}
+
+function calculateSuccessRate(successCount, totalRuns) {
+    if (totalRuns === 0) return '0%';
+    return `${Math.round((successCount / totalRuns) * 100)}%`;
+}
+
+function updateStatusColors(status) {
+    const statusElement = document.getElementById('scraperStatus');
+    statusElement.className = 'health-value status-' + status;
+}
+
+function setupFormValidation() {
+    const team1Select = document.getElementById('team1');
+    const team2Select = document.getElementById('team2');
     const predictButton = document.getElementById('predictButton');
-    const team1Help = document.getElementById('team1Help');
-    const team2Help = document.getElementById('team2Help');
     
-    // Reset help text
-    team1Help.style.display = 'none';
-    team2Help.style.display = 'none';
+    // Add event listeners for team selection
+    team1Select.addEventListener('change', handleTeam1Change);
+    team2Select.addEventListener('change', handleTeam2Change);
     
-    let isValid = true;
-    
-    if (!team1) {
-        team1Help.style.display = 'block';
-        isValid = false;
-    }
-    
-    if (!team2) {
-        team2Help.style.display = 'block';
-        isValid = false;
-    }
-    
-    if (team1 && team2) {
-        if (teamGroups[team1] !== teamGroups[team2]) {
-            team2Help.textContent = 'Teams must be from the same group';
-            team2Help.style.display = 'block';
-            isValid = false;
+    // Function to check if form is valid
+    function validateForm() {
+        const team1 = team1Select.value;
+        const team2 = team2Select.value;
+        
+        if (team1 && team2 && team1 !== team2) {
+            predictButton.disabled = false;
+            predictButton.classList.add('ready');
+        } else {
+            predictButton.disabled = true;
+            predictButton.classList.remove('ready');
         }
     }
     
-    predictButton.disabled = !isValid;
-    return isValid;
-}
-
-// Initialize on page load
-function initializePage() {
-    // If team1 is pre-selected (from form submission), apply the filter
-    const team1Select = document.getElementById('team1');
-    const team2Select = document.getElementById('team2');
+    // Add event listeners
+    team1Select.addEventListener('change', validateForm);
+    team2Select.addEventListener('change', validateForm);
     
+    // Initial validation
+    validateForm();
+    
+    // Enhanced form submission with loading state
+    document.getElementById('predictionForm').addEventListener('submit', function(e) {
+        if (predictButton.disabled) {
+            e.preventDefault();
+            return;
+        }
+        
+        // Show loading state
+        predictButton.disabled = true;
+        predictButton.innerHTML = '<span class="loading-spinner"></span> Predicting...';
+        
+        // Re-enable after a delay (form will submit)
+        setTimeout(() => {
+            predictButton.disabled = false;
+            predictButton.innerHTML = 'Predict Match Winner';
+        }, 2000);
+    });
+    
+    // Initialize page state if teams are pre-selected
     if (team1Select.value) {
         const selectedTeamGroup = teamGroups[team1Select.value];
         filterTeamsByGroup(team2Select, selectedTeamGroup);
@@ -164,27 +253,74 @@ function initializePage() {
             }
         });
     }
-    
-    validateForm();
 }
 
-// Event listener setup
-function setupEventListeners() {
-    document.getElementById('team1').addEventListener('change', handleTeam1Change);
-    document.getElementById('team2').addEventListener('change', handleTeam2Change);
-    document.getElementById('team1').addEventListener('change', validateForm);
-    document.getElementById('team2').addEventListener('change', validateForm);
-    
-    document.getElementById('predictionForm').addEventListener('submit', function(e) {
-        if (!validateForm()) {
-            e.preventDefault();
-        }
+// Add smooth scrolling for better UX
+function smoothScrollTo(element) {
+    element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
     });
 }
 
-// Initialize everything when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    initializeTeamGroups();
-    setupEventListeners();
-    initializePage();
+// Add keyboard navigation for form
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.tagName === 'SELECT') {
+        e.preventDefault();
+        const nextElement = e.target.nextElementSibling;
+        if (nextElement && nextElement.tagName === 'SELECT') {
+            nextElement.focus();
+        }
+    }
 });
+
+// Add loading animation CSS
+const style = document.createElement('style');
+style.textContent = `
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 8px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .status-success {
+        color: #4caf50;
+    }
+    
+    .status-error {
+        color: #f44336;
+    }
+    
+    .status-warning {
+        color: #ff9800;
+    }
+    
+    .ready {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+    
+    .health-item {
+        transition: all 0.3s ease;
+    }
+    
+    .health-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+`;
+document.head.appendChild(style);

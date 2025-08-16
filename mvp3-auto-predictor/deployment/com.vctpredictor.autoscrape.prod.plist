@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.vctpredictor.autoscrape.prod</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/jesusdonaciano/Desktop/projects/VCTPredictorAPP/mvp3-auto-predictor/venv/bin/python</string>
+        <string>/Users/jesusdonaciano/Desktop/projects/VCTPredictorAPP/mvp3-auto-predictor/auto_scrape.py</string>
+    </array>
+    
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/jesusdonaciano/Desktop/projects/VCTPredictorAPP/mvp3-auto-predictor/logs/daemon.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/jesusdonaciano/Desktop/projects/VCTPredictorAPP/mvp3-auto-predictor/logs/daemon.error.log</string>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/jesusdonaciano/Desktop/projects/VCTPredictorAPP/mvp3-auto-predictor</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>FLASK_ENV</key>
+        <string>production</string>
+        <key>PYTHONPATH</key>
+        <string>/Users/jesusdonaciano/Desktop/projects/VCTPredictorAPP/mvp3-auto-predictor</string>
+    </dict>
+    
+    <key>RunAtLoad</key>
+    <false/>
+    
+    <key>KeepAlive</key>
+    <false/>
+    
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+</dict>
+</plist>
