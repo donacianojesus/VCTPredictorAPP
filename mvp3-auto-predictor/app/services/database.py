@@ -494,29 +494,36 @@ class MatchDatabase:
         conn = self.get_connection()
         cursor = conn.cursor()
 
-        # Create table if it doesn't exist with correct schema
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS group_standings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                group_name TEXT NOT NULL,
-                team TEXT NOT NULL,
-                record TEXT NOT NULL,
-                map_diff TEXT NOT NULL,
-                round_diff TEXT NOT NULL,
-                delta REAL DEFAULT 0.0,
-                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(group_name, team)
-            )
-        """)
+        try:
+            if self.is_postgres:
+                # PostgreSQL syntax
+                cursor.execute("""
+                    INSERT INTO group_standings 
+                    (group_name, team, record, map_diff, round_diff, delta, last_updated)
+                    VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (group_name, team) DO UPDATE SET
+                        record = EXCLUDED.record,
+                        map_diff = EXCLUDED.map_diff,
+                        round_diff = EXCLUDED.round_diff,
+                        delta = EXCLUDED.delta,
+                        last_updated = CURRENT_TIMESTAMP
+                """, (group, team, record, map_diff, round_diff, delta))
+            else:
+                # SQLite syntax
+                cursor.execute("""
+                    INSERT OR REPLACE INTO group_standings 
+                    (group_name, team, record, map_diff, round_diff, delta, last_updated)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (group, team, record, map_diff, round_diff, delta, datetime.now().isoformat()))
 
-        cursor.execute("""
-            INSERT OR REPLACE INTO group_standings 
-            (group_name, team, record, map_diff, round_diff, delta, last_updated)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (group, team, record, map_diff, round_diff, delta, datetime.now().isoformat()))
-
-        conn.commit()
-        conn.close()
+            conn.commit()
+            logger.debug(f"Team data inserted/updated: {team} ({group})")
+            
+        except Exception as e:
+            logger.error(f"Failed to insert team data: {e}")
+            raise
+        finally:
+            conn.close()
 
     def update_scraper_health(self, status, success_count=None, total_runs=None, error_message=None):
         """Update scraper health status"""
