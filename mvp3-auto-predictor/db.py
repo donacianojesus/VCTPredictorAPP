@@ -20,19 +20,48 @@ class MatchDatabase:
         cursor = conn.cursor()
         
         try:
+            # Create group_standings table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS group_standings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     group_name TEXT NOT NULL,
                     team TEXT NOT NULL,
                     record TEXT NOT NULL,
-                    map_diff INTEGER DEFAULT 0,
-                    round_diff INTEGER DEFAULT 0,
-                    delta REAL DEFAULT 0.0,
+                    map_diff TEXT DEFAULT '0/0',
+                    round_diff TEXT DEFAULT '0/0',
+                    delta INTEGER DEFAULT 0,
                     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(group_name, team)
                 )
             ''')
+            
+            # Create matches table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS matches (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    match_id TEXT,
+                    date TEXT NOT NULL,
+                    team1 TEXT NOT NULL,
+                    team2 TEXT NOT NULL,
+                    team1_score INTEGER NOT NULL,
+                    team2_score INTEGER NOT NULL,
+                    map_name TEXT,
+                    tournament TEXT,
+                    created_at TEXT
+                )
+            ''')
+            
+            # Create data_updates table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS data_updates (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    update_date TEXT NOT NULL,
+                    matches_added INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'success',
+                    created_at TEXT
+                )
+            ''')
+            
             conn.commit()
             logger.debug("Database initialized successfully")
         except Exception as e:
@@ -332,51 +361,61 @@ class MatchDatabase:
     
     def get_all_teams_with_stats(self, days_back=30):
         """
-        Returns a list of all teams with their stats and group info.
-        Groups are hardcoded for now but could be moved to a config file or database table.
+        Returns a list of all teams with their stats and group info from the group_standings table.
         """
-        # Define VCT Americas groups (2025 teams)
-        group_a = {
-            'Sentinels', 'G2 Esports', 'Cloud9', '2Game Esports', 
-            'Evil Geniuses', 'FURIA'
-        }
-        group_b = {
-            'LOUD', 'Leviatan', 'NRG', '100 Thieves',
-            'MIBR', 'KRÜ Esports'
-        }
-
-        # Get all active teams from recent matches
-        teams = self.get_available_teams()
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
         
-        team_list = []
-        for team in teams:
-            # Get team statistics using existing method
-            stats = self.calculate_team_stats(team, days_back=days_back)
+        try:
+            # Get all teams from group_standings table
+            cursor.execute('''
+                SELECT group_name, team, record, map_diff, round_diff, delta, last_updated
+                FROM group_standings
+                ORDER BY group_name, delta DESC
+            ''')
             
-            # Determine team's group
-            if team in group_a:
-                group = 'A'
-            elif team in group_b:
-                group = 'B'
-            else:
-                group = 'Unknown'  # For teams not in predefined groups
-
-            # Create team entry with all required info
-            team_entry = {
-                'name': team,
-                'wins': stats['wins'],
-                'losses': stats['losses'],
-                'win_rate': stats['win_rate'],
-                'group': group,
-                'last_updated': stats['last_updated']
-            }
+            rows = cursor.fetchall()
+            team_list = []
             
-            team_list.append(team_entry)
-        
-        # Sort teams by win rate within their groups
-        team_list.sort(key=lambda x: (x['group'], -x['win_rate']))
-        
-        return team_list
+            for row in rows:
+                group_name, team, record, map_diff, round_diff, delta, last_updated = row
+                
+                # Parse the record to get wins and losses
+                # Record format is like "4-0" (wins-losses)
+                try:
+                    wins_part, losses_part = record.split('-')
+                    wins = int(wins_part)
+                    losses = int(losses_part)
+                    total_matches = wins + losses
+                    win_rate = wins / total_matches if total_matches > 0 else 0.0
+                except (ValueError, IndexError):
+                    wins = 0
+                    losses = 0
+                    win_rate = 0.0
+                
+                # Create team entry with all required info
+                team_entry = {
+                    'team': team,
+                    'group_name': group_name,
+                    'record': record,
+                    'map_diff': map_diff,
+                    'round_diff': round_diff,
+                    'delta': delta,
+                    'wins': wins,
+                    'losses': losses,
+                    'win_rate': win_rate,
+                    'last_updated': last_updated
+                }
+                
+                team_list.append(team_entry)
+            
+            return team_list
+            
+        except Exception as e:
+            logger.error(f"Error getting teams with stats: {e}")
+            return []
+        finally:
+            conn.close()
     
     def insert_match_data(self, group, team, record, map_diff, round_diff, delta):
         """

@@ -4,237 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VCT Match Predictor</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        
-        select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            background-color: white;
-        }
-        
-        select:focus {
-            border-color: #007bff;
-            outline: none;
-        }
-        
-        .predict-button {
-            background-color: #ff540c;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            font-size: 18px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-        }
-        
-        .predict-button:hover {
-            background-color: #d94300;
-        }
-        
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .prediction-result {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            padding: 20px;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-        
-        .winner {
-            font-size: 24px;
-            font-weight: bold;
-            color: #155724;
-            text-align: center;
-            margin: 15px 0;
-        }
-        
-        .team-stats {
-            display: flex;
-            justify-content: space-between;
-            margin: 20px 0;
-        }
-        
-        .team-stat {
-            text-align: center;
-            flex: 1;
-            padding: 0 10px;
-        }
-        
-        .team-name {
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        
-        .win-rate {
-            font-size: 16px;
-            color: #666;
-        }
-        
-        .match-probability {
-            font-size: 20px;
-            font-weight: bold;
-            color: #007bff;
-            margin-top: 5px;
-        }
-        
-        .vs {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #666;
-        }
-        
-        .records {
-            font-size: 14px;
-            color: #888;
-            margin-top: 5px;
-        }
-        
-        .group-standings {
-            margin: 30px 0;
-        }
-        
-        .group-section {
-            margin-bottom: 30px;
-        }
-        
-        .group-title {
-            background-color: #ff540c;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px 5px 0 0;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        
-        .group-teams {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-top: none;
-            border-radius: 0 0 5px 5px;
-            padding: 15px;
-        }
-        
-        .team-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .team-row:last-child {
-            border-bottom: none;
-        }
-        
-        .team-info {
-            display: flex;
-            align-items: center;
-        }
-        
-        .team-rank {
-            background-color: #ff540c;
-            color: white;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-        
-        .team-name-standings {
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .team-record-standings {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .team-winrate {
-            font-weight: bold;
-            color: #28a745;
-        }
-
-        .last-updated {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .help-text {
-            display: none;
-            color: #dc3545;
-            font-size: 14px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
         <h1>
-            <img src="{{ url_for('static', filename='VCT_2023_Americas.png') }}" alt="VCT Americas Logo" style="height: 48px; vertical-align: middle;">
+            <img src="{{ url_for('static', filename='VCT_2023_Americas.png') }}" alt="VCT Americas Logo" class="logo-image">
             VCT Americas: Stage 2 Group Stage Match Predictor
         </h1>
-        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+        <p class="description-text">
             This "Predictor" Tool allows a simple prediction of the winner of a match between two VCT Americas teams during Stage 2 Group Stage.
         </p>
         
         <!-- Group Standings -->
         <div class="group-standings">
-            <h2 style="text-align: center; color: #333; margin-bottom: 30px;">Current Stage 2 Group Standings</h2>
+            <h2 class="standings-title">Current Stage 2 Group Standings</h2>
             
             {% for group, teams in teams_by_group.items() %}
             <div class="group-section">
@@ -244,10 +28,10 @@
                     <div class="team-row">
                         <div class="team-info">
                             <span class="team-name-standings">{{ team.name }}</span>
-                            <span class="team-record-standings">{{ team.record }}</span>
-                            <span class="team-record-standings">Map Diff: {{ team.map_diff }}</span>
-                            <span class="team-record-standings">Round Diff: {{ team.round_diff }}</span>
-                            <span class="team-winrate">Delta: {{ team.delta }}</span>
+                            <span class="team-record-standings">REC: {{ team.record }}</span>
+                            <span class="team-record-standings">MAP: {{ team.map_diff }}</span>
+                            <span class="team-record-standings">RND: {{ team.round_diff }}</span>
+                            <span class="team-winrate {% if team.delta > 0 %}delta-positive{% elif team.delta < 0 %}delta-negative{% else %}delta-zero{% endif %}">Δ: {{ team.delta }}</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -262,22 +46,22 @@
                 <label for="team1" id="team1Label">Team 1:</label>
                 <select name="team1" id="team1" required aria-labelledby="team1Label" aria-describedby="team1Help">
                     <option value="">-- Select Team 1 --</option>
-                    <optgroup label="Group A">
-                        {% for team in teams_by_group.A %}
+                    <optgroup label="Group Alpha">
+                        {% for team in teams_by_group.Alpha %}
                             <option value="{{ team.name }}" {% if team.name == selected_team1 %}selected{% endif %}>
-                                {{ team.name }} ({{ team.wins }}W-{{ team.losses }}L)
+                                {{ team.name }} ({{ team.record }})
                             </option>
                         {% endfor %}
                     </optgroup>
-                    <optgroup label="Group B">
-                        {% for team in teams_by_group.B %}
+                    <optgroup label="Group Omega">
+                        {% for team in teams_by_group.Omega %}
                             <option value="{{ team.name }}" {% if team.name == selected_team1 %}selected{% endif %}>
-                                {{ team.name }} ({{ team.wins }}W-{{ team.losses }}L)
+                                {{ team.name }} ({{ team.record }})
                             </option>
                         {% endfor %}
                     </optgroup>
                 </select>
-                <div id="team1Help" class="help-text" style="display: none; color: #dc3545; font-size: 14px;">
+                <div id="team1Help" class="help-text help-text-inline">
                     Please select a team
                 </div>
             </div>
@@ -286,22 +70,22 @@
                 <label for="team2" id="team2Label">Team 2:</label>
                 <select name="team2" id="team2" required aria-labelledby="team2Label" aria-describedby="team2Help">
                     <option value="">-- Select Team 2 --</option>
-                    <optgroup label="Group A">
-                        {% for team in teams_by_group.A %}
+                    <optgroup label="Group Alpha">
+                        {% for team in teams_by_group.Alpha %}
                             <option value="{{ team.name }}" {% if team.name == selected_team2 %}selected{% endif %}>
-                                {{ team.name }} ({{ team.wins }}W-{{ team.losses }}L)
+                                {{ team.name }} ({{ team.record }})
                             </option>
                         {% endfor %}
                     </optgroup>
-                    <optgroup label="Group B">
-                        {% for team in teams_by_group.B %}
+                    <optgroup label="Group Omega">
+                        {% for team in teams_by_group.Omega %}
                             <option value="{{ team.name }}" {% if team.name == selected_team2 %}selected{% endif %}>
-                                {{ team.name }} ({{ team.wins }}W-{{ team.losses }}L)
+                                {{ team.name }} ({{ team.record }})
                             </option>
                         {% endfor %}
                     </optgroup>
                 </select>
-                <div id="team2Help" class="help-text" style="display: none; color: #dc3545; font-size: 14px;">
+                <div id="team2Help" class="help-text help-text-inline">
                     Please select a team from the same group
                 </div>
             </div>
@@ -311,7 +95,7 @@
             </button>
         </form>
         
-        <div style="text-align: center; margin-top: 15px; color: #666; font-size: 14px;">
+        <div class="note-text">
             <p>📋 <strong>Note:</strong> Teams can only play against other teams in their own group during the group stage.</p>
         </div>
         
@@ -325,7 +109,7 @@
         <!-- Prediction Results -->
         {% if prediction %}
             <div class="prediction-result" role="region" aria-label="Match prediction results">
-                <h2 style="text-align: center; color: #155724; margin-top: 0;">
+                <h2 class="prediction-title">
                     Match Prediction Results
                 </h2>
                 
@@ -362,7 +146,7 @@
                 <div class="winner" role="alert">
                      Predicted Winner: {{ prediction.predicted_winner|title }}
                     <br>
-                    <span style="font-size: 18px;">
+                    <span class="confidence-text">
                         ({{ "%.0f"|format(prediction.confidence * 100) }}% confidence)
                     </span>
                 </div>
@@ -370,7 +154,7 @@
         {% endif %}
         
         <!-- Last Updated Info -->
-        <div class="last-updated" style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
+        <div class="last-updated">
             {% if last_updated %}
                 Last updated: {{ last_updated.strftime('%Y-%m-%d %H:%M UTC') }}
             {% endif %}
@@ -378,203 +162,20 @@
         
         <!-- Instructions for first-time users -->
         {% if not prediction and not error_message %}
-            <div style="background-color: #e7f3ff; padding: 20px; border-radius: 5px; margin-top: 20px; border-left: 4px solid #ff540c;">
-                <h3 style="margin-top: 0; color: #ff540c;">How it works:</h3>
-                <ol style="color: #666;">
+            <div class="instructions-box">
+                <h3 class="instructions-title">How it works:</h3>
+                <ol class="instructions-list">
                     <li>Select two teams from the dropdowns above</li>
                     <li>Click "Predict Match Winner"</li>
                     <li>See the prediction based on recent team performance</li>
                 </ol>
-                <p style="color: #666; margin-bottom: 0;">
+                <p class="instructions-paragraph">
                     <strong>Note:</strong> Predictions are based on recent win/loss records. 
                 </p>
             </div>
         {% endif %}
     </div>
 
-    <script>
-        // Get team group information from the page
-        const teamGroups = {};
-        
-        // Extract team group information from the optgroups
-        document.querySelectorAll('optgroup').forEach(group => {
-            const groupName = group.label.replace('Group ', '');
-            group.querySelectorAll('option').forEach(option => {
-                if (option.value) {
-                    teamGroups[option.value] = groupName;
-                }
-            });
-        });
-        
-        // Function to filter teams by group
-        function filterTeamsByGroup(teamSelect, targetGroup) {
-            const optgroups = teamSelect.querySelectorAll('optgroup');
-            
-            optgroups.forEach(group => {
-                const groupName = group.label.replace('Group ', '');
-                const options = group.querySelectorAll('option');
-                
-                options.forEach(option => {
-                    if (option.value) {
-                        if (groupName === targetGroup) {
-                            option.style.display = '';
-                            option.disabled = false;
-                        } else {
-                            option.style.display = 'none';
-                            option.disabled = true;
-                        }
-                    }
-                });
-            });
-        }
-        
-        // Function to show all teams
-        function showAllTeams(teamSelect) {
-            const optgroups = teamSelect.querySelectorAll('optgroup');
-            
-            optgroups.forEach(group => {
-                const options = group.querySelectorAll('option');
-                options.forEach(option => {
-                    if (option.value) {
-                        option.style.display = '';
-                        option.disabled = false;
-                    }
-                });
-            });
-        }
-        
-        // Handle team1 selection
-        document.getElementById('team1').addEventListener('change', function() {
-            const team2Select = document.getElementById('team2');
-            const selectedValue = this.value;
-            
-            // Reset team2 selection
-            team2Select.value = '';
-            
-            if (selectedValue) {
-                const selectedTeamGroup = teamGroups[selectedValue];
-                
-                // Filter team2 dropdown to only show teams from the same group
-                filterTeamsByGroup(team2Select, selectedTeamGroup);
-                
-                // Disable the selected team in team2 dropdown
-                const options = team2Select.querySelectorAll('option');
-                options.forEach(option => {
-                    if (option.value === selectedValue) {
-                        option.disabled = true;
-                    }
-                });
-                
-                // Update the placeholder text
-                team2Select.querySelector('option[value=""]').textContent = `-- Select Team 2 (Group ${selectedTeamGroup}) --`;
-            } else {
-                // If no team selected, show all teams
-                showAllTeams(team2Select);
-                team2Select.querySelector('option[value=""]').textContent = '-- Select Team 2 --';
-            }
-        });
-        
-        // Handle team2 selection
-        document.getElementById('team2').addEventListener('change', function() {
-            const team1Select = document.getElementById('team1');
-            const selectedValue = this.value;
-            
-            if (selectedValue) {
-                // Disable the selected team in team1 dropdown
-                const options = team1Select.querySelectorAll('option');
-                options.forEach(option => {
-                    if (option.value === selectedValue) {
-                        option.disabled = true;
-                    }
-                });
-            }
-        });
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // If team1 is pre-selected (from form submission), apply the filter
-            const team1Select = document.getElementById('team1');
-            const team2Select = document.getElementById('team2');
-            
-            if (team1Select.value) {
-                const selectedTeamGroup = teamGroups[team1Select.value];
-                filterTeamsByGroup(team2Select, selectedTeamGroup);
-                
-                // Disable the selected team in team2 dropdown
-                const options = team2Select.querySelectorAll('option');
-                options.forEach(option => {
-                    if (option.value === team1Select.value) {
-                        option.disabled = true;
-                    }
-                });
-                
-                // Update the placeholder text
-                team2Select.querySelector('option[value=""]').textContent = `-- Select Team 2 (Group ${selectedTeamGroup}) --`;
-            }
-        });
-        
-        // Form validation
-        function validateForm() {
-            const team1 = document.getElementById('team1').value;
-            const team2 = document.getElementById('team2').value;
-            const predictButton = document.getElementById('predictButton');
-            const team1Help = document.getElementById('team1Help');
-            const team2Help = document.getElementById('team2Help');
-            
-            // Reset help text
-            team1Help.style.display = 'none';
-            team2Help.style.display = 'none';
-            
-            let isValid = true;
-            
-            if (!team1) {
-                team1Help.style.display = 'block';
-                isValid = false;
-            }
-            
-            if (!team2) {
-                team2Help.style.display = 'block';
-                isValid = false;
-            }
-            
-            if (team1 && team2) {
-                if (teamGroups[team1] !== teamGroups[team2]) {
-                    team2Help.textContent = 'Teams must be from the same group';
-                    team2Help.style.display = 'block';
-                    isValid = false;
-                }
-            }
-            
-            predictButton.disabled = !isValid;
-            return isValid;
-        }
-
-        // Add event listeners for form validation
-        document.getElementById('team1').addEventListener('change', validateForm);
-        document.getElementById('team2').addEventListener('change', validateForm);
-        document.getElementById('predictionForm').addEventListener('submit', function(e) {
-            if (!validateForm()) {
-                e.preventDefault();
-            }
-        });
-        
-        // Initialize validation on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const team1Select = document.getElementById('team1');
-            const team2Select = document.getElementById('team2');
-            
-            // Also handle team2 pre-selection
-            if (team2Select.value) {
-                const options = team1Select.querySelectorAll('option');
-                options.forEach(option => {
-                    if (option.value === team2Select.value) {
-                        option.disabled = true;
-                    }
-                });
-            }
-            
-            validateForm();
-        });
-    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
