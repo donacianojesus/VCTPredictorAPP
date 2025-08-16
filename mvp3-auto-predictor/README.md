@@ -1,18 +1,17 @@
 # 🎮 VCT Predictor - Valorant Champions Tour Match Prediction System
 
-A sophisticated web application that predicts VCT match outcomes using real-time data scraping and machine learning algorithms.
+A sophisticated web application that predicts VCT match outcomes using **statistical analysis** and **real-time data scraping**.
 
 ## 🏗️ Architecture Overview
 
 ```
 vct-predictor/
-├── 📁 app/                    # Core application logic
+├── 📁 app/                    # Core Flask application
 │   ├── __init__.py           # Flask app initialization
 │   ├── routes.py             # Web routes and endpoints
-│   ├── models.py             # Database models
-│   └── services/             # Business logic services
+│   └── 📁 services/          # Business logic services
 │       ├── scraper.py        # Data scraping service
-│       ├── predictor.py      # Match prediction service
+│       ├── predictor.py      # Statistical prediction service
 │       └── database.py       # Database operations
 ├── 📁 static/                 # Static assets
 │   ├── css/                  # Stylesheets
@@ -67,7 +66,7 @@ python3 app/__init__.py
 ## 🌐 Features
 
 - **Real-time VCT Data**: Automated scraping from vlr.gg
-- **Match Predictions**: AI-powered outcome predictions
+- **Statistical Predictions**: Win rate and performance-based match predictions
 - **Team Analytics**: Comprehensive team performance metrics
 - **Responsive Design**: Mobile and desktop optimized
 - **Health Monitoring**: Real-time system status
@@ -87,11 +86,24 @@ export SECRET_KEY=your_secret_key
 - `config/production.py` - Production settings
 - `config/base.py` - Base configuration
 
-## 📊 Data Sources
+## 📊 Data Sources & Prediction Method
 
+### **Data Collection**
 - **VLR.gg**: Official VCT standings and statistics
 - **Real-time Updates**: Automated daily scraping
 - **Data Validation**: Robust error handling and validation
+
+### **Prediction Algorithm**
+Our prediction system uses **statistical analysis**, not machine learning:
+
+1. **Win Rate Calculation**: `wins / (wins + losses)` for each team
+2. **Performance Metrics**: Map differences, round differences, delta scores
+3. **Probability Distribution**: Normalized win rates to predict match outcomes
+4. **Confidence Scoring**: Based on data quality and team performance history
+
+**Example**: If Team A has 80% win rate vs Team B's 60% win rate:
+- Team A predicted winner with 57% confidence
+- Team B has 43% chance to win
 
 ## 🚀 Deployment
 
