@@ -154,5 +154,5 @@ def index():
         selected_team2=selected_team2,
         prediction=prediction,
         error_message=error_message,
-        last_updated=datetime.fromisoformat(max(team['last_updated'] for team in teams_with_stats)) if teams_with_stats else None
+        last_updated=datetime.now() if teams_with_stats else None
     )
