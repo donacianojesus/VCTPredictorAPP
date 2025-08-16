@@ -1,6 +1,5 @@
 # MVP 3: Database Operations
 
-import sqlite3
 import logging
 import os
 from datetime import datetime, timedelta
@@ -10,39 +9,107 @@ logger = logging.getLogger(__name__)
 class MatchDatabase:
     def __init__(self, db_path='val_standings.db'):
         self.db_path = db_path
+        self.is_postgres = db_path.startswith('postgresql://')
         self.init_database()
         
+    def get_connection(self):
+        """Get database connection based on type"""
+        if self.is_postgres:
+            try:
+                import psycopg2
+                return psycopg2.connect(self.db_path)
+            except ImportError:
+                logger.error("psycopg2 not available for PostgreSQL")
+                raise
+        else:
+            import sqlite3
+            return sqlite3.connect(self.db_path)
+    
     def init_database(self):
         """Initialize database with required tables"""
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
         
         try:
             # Create group standings table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS group_standings (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    group_name TEXT NOT NULL,
-                    team TEXT NOT NULL,
-                    record TEXT NOT NULL,
-                    map_diff TEXT NOT NULL,
-                    round_diff TEXT NOT NULL,
-                    delta REAL NOT NULL,
-                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(group_name, team)
-                )
-            """)
-
-            # Create data updates tracking table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS data_updates (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    update_date DATE NOT NULL,
-                    matches_added INTEGER NOT NULL,
-                    status TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
+            if self.is_postgres:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS group_standings (
+                        id SERIAL PRIMARY KEY,
+                        group_name VARCHAR(50) NOT NULL,
+                        team VARCHAR(100) NOT NULL,
+                        record VARCHAR(20) NOT NULL,
+                        map_diff VARCHAR(20) NOT NULL,
+                        round_diff VARCHAR(20) NOT NULL,
+                        delta REAL NOT NULL,
+                        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(group_name, team)
+                    )
+                """)
+                
+                # Create scraper health tracking table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS scraper_health (
+                        id SERIAL PRIMARY KEY,
+                        last_run TIMESTAMP,
+                        status VARCHAR(50) DEFAULT 'unknown',
+                        success_count INTEGER DEFAULT 0,
+                        total_runs INTEGER DEFAULT 0,
+                        last_error TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                # Create data updates tracking table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS data_updates (
+                        id SERIAL PRIMARY KEY,
+                        update_date DATE NOT NULL,
+                        matches_added INTEGER NOT NULL,
+                        status VARCHAR(50) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+            else:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS group_standings (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        group_name TEXT NOT NULL,
+                        team TEXT NOT NULL,
+                        record TEXT NOT NULL,
+                        map_diff TEXT NOT NULL,
+                        round_diff TEXT NOT NULL,
+                        delta REAL NOT NULL,
+                        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(group_name, team)
+                    )
+                """)
+                
+                # Create scraper health tracking table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS scraper_health (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        last_run TIMESTAMP,
+                        status TEXT DEFAULT 'unknown',
+                        success_count INTEGER DEFAULT 0,
+                        total_runs INTEGER DEFAULT 0,
+                        last_error TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                # Create data updates tracking table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS data_updates (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        update_date DATE NOT NULL,
+                        matches_added INTEGER NOT NULL,
+                        status TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
             
             conn.commit()
             logger.debug(f"Database initialized at {self.db_path}")
@@ -58,7 +125,7 @@ class MatchDatabase:
         """
         Insert a single match, avoiding duplicates
         """
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
         
         try:
@@ -93,7 +160,7 @@ class MatchDatabase:
         """
         Insert multiple matches efficiently
         """
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
         
         inserted_count = 0
@@ -136,7 +203,7 @@ class MatchDatabase:
     
     def record_data_update(self, matches_added, status):
         """Track when we last updated data"""
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
         
         try:
@@ -159,7 +226,7 @@ class MatchDatabase:
         """
         Get recent matches for a team
         """
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
         
         cutoff_date = (datetime.now() - timedelta(days=days_back)).date().isoformat()
@@ -245,7 +312,7 @@ class MatchDatabase:
     
     def get_head_to_head(self, team1, team2, limit=10):
         """Get recent head-to-head matches between two teams"""
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -294,7 +361,7 @@ class MatchDatabase:
     
     def get_database_stats(self):
         """Get overall database statistics for monitoring"""
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
         
         # Total matches
@@ -326,7 +393,7 @@ class MatchDatabase:
     
     def get_available_teams(self):
         """Get list of teams that have recent match data"""
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
         
         # Get teams with matches in last 60 days
@@ -348,7 +415,7 @@ class MatchDatabase:
         """
         Returns a list of all teams with their stats and group info from the group_standings table.
         """
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
         
         try:
@@ -424,7 +491,7 @@ class MatchDatabase:
             round_diff (str): Round differential (e.g. "92-60")
             delta (float): Delta value
         """
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_connection()
         cursor = conn.cursor()
 
         # Create table if it doesn't exist with correct schema
@@ -450,6 +517,91 @@ class MatchDatabase:
 
         conn.commit()
         conn.close()
+
+    def update_scraper_health(self, status, success_count=None, total_runs=None, error_message=None):
+        """Update scraper health status"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        try:
+            if self.is_postgres:
+                cursor.execute("""
+                    INSERT INTO scraper_health (last_run, status, success_count, total_runs, last_error, updated_at)
+                    VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (id) DO UPDATE SET
+                        last_run = CURRENT_TIMESTAMP,
+                        status = EXCLUDED.status,
+                        success_count = EXCLUDED.success_count,
+                        total_runs = EXCLUDED.total_runs,
+                        last_error = EXCLUDED.last_error,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (status, success_count, total_runs, error_message))
+            else:
+                cursor.execute("""
+                    INSERT OR REPLACE INTO scraper_health 
+                    (id, last_run, status, success_count, total_runs, last_error, updated_at)
+                    VALUES (1, CURRENT_TIMESTAMP, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """, (status, success_count, total_runs, error_message))
+            
+            conn.commit()
+            logger.debug(f"Scraper health updated: {status}")
+            
+        except Exception as e:
+            logger.error(f"Failed to update scraper health: {e}")
+            raise
+        finally:
+            conn.close()
+    
+    def get_scraper_health(self):
+        """Get current scraper health status"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        try:
+            if self.is_postgres:
+                cursor.execute("""
+                    SELECT last_run, status, success_count, total_runs, last_error
+                    FROM scraper_health 
+                    ORDER BY updated_at DESC 
+                    LIMIT 1
+                """)
+            else:
+                cursor.execute("""
+                    SELECT last_run, status, success_count, total_runs, last_error
+                    FROM scraper_health 
+                    ORDER BY updated_at DESC 
+                    LIMIT 1
+                """)
+            
+            result = cursor.fetchone()
+            if result:
+                return {
+                    'last_run': result[0],
+                    'status': result[1],
+                    'success_count': result[2] or 0,
+                    'total_runs': result[3] or 0,
+                    'last_error': result[4]
+                }
+            else:
+                return {
+                    'last_run': None,
+                    'status': 'unknown',
+                    'success_count': 0,
+                    'total_runs': 0,
+                    'last_error': None
+                }
+                
+        except Exception as e:
+            logger.error(f"Failed to get scraper health: {e}")
+            return {
+                'last_run': None,
+                'status': 'error',
+                'success_count': 0,
+                'total_runs': 0,
+                'last_error': str(e)
+            }
+        finally:
+            conn.close()
 
 # Usage example and testing
 if __name__ == "__main__":

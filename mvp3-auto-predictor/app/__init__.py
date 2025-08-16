@@ -25,9 +25,12 @@ def create_app(config_class=None):
     
     app.config.from_object(config_class)
     
+    # Get database connection string
+    database_url = os.environ.get('DATABASE_URL', config_class.DATABASE_PATH)
+    
     # Initialize extensions
-    db = MatchDatabase(config_class.DATABASE_PATH)
-    predictor = DynamicPredictor(config_class.DATABASE_PATH)
+    db = MatchDatabase(database_url)
+    predictor = DynamicPredictor(database_url)
     
     # Register blueprints
     from app.routes import main_bp

@@ -16,27 +16,30 @@ main_bp = Blueprint('main', __name__)
 def api_health():
     """API endpoint to get scraper health status"""
     try:
-        health_file = os.path.join(current_app.config['BASE_DIR'], "scraper_health.json")
-        if os.path.exists(health_file):
-            with open(health_file, 'r') as f:
-                health_data = json.load(f)
-                return jsonify(health_data)
-        else:
-            # Return default health data if file doesn't exist
-            return jsonify({
-                'status': 'unknown',
-                'message': 'Health data not available',
-                'last_run': None,
-                'success_count': 0,
-                'total_runs': 0
-            })
+        # Get health status from database
+        health_data = current_app.db.get_scraper_health()
+        
+        # Calculate success rate
+        success_rate = 0
+        if health_data['total_runs'] > 0:
+            success_rate = (health_data['success_count'] / health_data['total_runs']) * 100
+        
+        return jsonify({
+            'status': health_data['status'],
+            'message': 'Health data from database',
+            'last_run': health_data['last_run'].isoformat() if health_data['last_run'] else None,
+            'success_count': health_data['success_count'],
+            'total_runs': health_data['total_runs'],
+            'success_rate': round(success_rate, 1)
+        })
     except Exception as e:
         return jsonify({
             'status': 'error',
             'message': f'Failed to load health data: {str(e)}',
             'last_run': None,
             'success_count': 0,
-            'total_runs': 0
+            'total_runs': 0,
+            'success_rate': 0
         }), 500
 
 @main_bp.route('/', methods=['GET', 'POST'])
