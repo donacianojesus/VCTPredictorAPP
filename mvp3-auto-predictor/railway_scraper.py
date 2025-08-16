@@ -12,6 +12,7 @@ import cloudscraper
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import json
+from flask import Flask, jsonify, request
 
 # Add the app directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
@@ -24,6 +25,9 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Create Flask app for manual triggering
+app = Flask(__name__)
 
 class RailwayVCTScraper:
     def __init__(self):
@@ -234,21 +238,105 @@ class RailwayVCTScraper:
             
             return False
 
-def main():
-    """Main entry point for Railway scraper"""
+# Global scraper instance
+scraper = None
+
+@app.route('/')
+def home():
+    """Home page showing scraper status"""
     try:
-        scraper = RailwayVCTScraper()
+        if scraper:
+            health = scraper.db.get_scraper_health()
+            teams = scraper.db.get_all_teams_with_stats()
+            return jsonify({
+                'status': 'running',
+                'scraper_health': health,
+                'teams_count': len(teams),
+                'message': 'VCT Scraper is running. Use /run-scrape to trigger manual scrape.'
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Scraper not initialized'
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/run-scrape')
+def run_scrape():
+    """Manually trigger the scraper"""
+    try:
+        if not scraper:
+            return jsonify({
+                'status': 'error',
+                'message': 'Scraper not initialized'
+            }), 500
+        
         success = scraper.run_scrape()
         
         if success:
-            print("✅ VCT scrape completed successfully")
-            sys.exit(0)
+            teams = scraper.db.get_all_teams_with_stats()
+            return jsonify({
+                'status': 'success',
+                'message': f'Scrape completed successfully. {len(teams)} teams in database.',
+                'teams_count': len(teams)
+            })
         else:
-            print("❌ VCT scrape failed")
-            sys.exit(1)
+            return jsonify({
+                'status': 'error',
+                'message': 'Scrape failed. Check logs for details.'
+            }), 500
             
     except Exception as e:
-        print(f"❌ Scraper initialization failed: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    try:
+        if scraper:
+            health_data = scraper.db.get_scraper_health()
+            return jsonify(health_data)
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Scraper not initialized'
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+def main():
+    """Main entry point for Railway scraper"""
+    global scraper
+    
+    try:
+        scraper = RailwayVCTScraper()
+        logger.info("✅ Scraper initialized successfully")
+        
+        # Run initial scrape
+        logger.info("🚀 Running initial scrape...")
+        success = scraper.run_scrape()
+        
+        if success:
+            logger.info("✅ Initial scrape completed successfully")
+        else:
+            logger.warning("⚠️ Initial scrape failed, but service is running")
+        
+        # Start Flask app for manual triggering
+        logger.info("🌐 Starting Flask web interface...")
+        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+        
+    except Exception as e:
+        logger.error(f"❌ Scraper initialization failed: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
