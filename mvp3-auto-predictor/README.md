@@ -1,8 +1,8 @@
-# 🎮 VCT Predictor - Valorant Champions Tour Match Prediction System
+# VCT Predictor - Valorant Champions Tour Match Prediction System
 
 A sophisticated web application that predicts VCT match outcomes using **statistical analysis** and **real-time data scraping**.
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 ```
 vct-predictor/
@@ -30,7 +30,7 @@ vct-predictor/
 └── README.md                 # This file
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.8+
@@ -63,7 +63,7 @@ export FLASK_ENV=development
 python3 app/__init__.py
 ```
 
-## 🌐 Features
+## Features
 
 - **Real-time VCT Data**: Automated scraping from vlr.gg
 - **Statistical Predictions**: Win rate and performance-based match predictions
@@ -72,7 +72,7 @@ python3 app/__init__.py
 - **Health Monitoring**: Real-time system status
 - **Auto-scraping**: Daily data updates at 3am
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 ```bash
@@ -105,7 +105,7 @@ Our prediction system uses **statistical analysis**, not machine learning:
 - Team A predicted winner with 57% confidence
 - Team B has 43% chance to win
 
-## 🚀 Deployment
+## Deployment
 
 ### Heroku (Recommended)
 ```bash
@@ -126,7 +126,7 @@ python3 -m pytest tests/
 python3 -m pytest --cov=app tests/
 ```
 
-## 📈 Monitoring
+## Monitoring
 
 ### Web Interface
 - Health status dashboard
@@ -141,28 +141,3 @@ python3 scripts/monitor.py
 # View logs
 tail -f logs/app.log
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Support
-
-- **Issues**: GitHub Issues
-- **Documentation**: See `docs/` directory
-- **Wiki**: Project wiki for detailed guides
-
----
-
-**Built with ❤️ for the Valorant community**
-
-**Version**: 2.0.0  
-**Status**: Production Ready 🚀
