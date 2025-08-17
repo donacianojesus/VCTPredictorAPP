@@ -595,7 +595,15 @@ def index():
         # Get teams with stats
         teams_with_stats = current_app.db.get_all_teams_with_stats()
         
-        if not teams_with_stats or len(teams_with_stats) < 10:
+        # Debug: Log team count and data
+        print(f"🔍 Found {len(teams_with_stats) if teams_with_stats else 0} teams in database")
+        if teams_with_stats:
+            print("📋 Teams found:")
+            for team in teams_with_stats:
+                print(f"  - {team.get('team', 'Unknown')} (Group {team.get('group_name', 'Unknown')}): {team.get('record', 'Unknown')}")
+        
+        if not teams_with_stats or len(teams_with_stats) < 6:  # Temporarily lowered from 10 to 6
+            print(f"⚠️ Not enough teams ({len(teams_with_stats) if teams_with_stats else 0}), showing no-data section")
             return render_template('index.html',
                                 teams_with_stats=[],
                                 prediction_result=None,

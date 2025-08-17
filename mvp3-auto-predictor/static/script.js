@@ -208,12 +208,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to format last run time
     function formatLastRun(lastRun) {
-        if (!lastRun || lastRun === 'None') return 'Never';
+        if (!lastRun || lastRun === 'None' || lastRun === null) return 'Never';
         
         try {
             const date = new Date(lastRun);
             const now = new Date();
-            const diffMs = now - date;
+            
+            // Check if the date is valid
+            if (isNaN(date.getTime())) {
+                console.log('⚠️ Invalid date format:', lastRun);
+                return 'Invalid date';
+            }
+            
+            const diffMs = now.getTime() - date.getTime();
+            
+            // Prevent negative values (future dates)
+            if (diffMs < 0) {
+                console.log('⚠️ Future date detected:', date, 'Current time:', now);
+                return 'Just now';
+            }
+            
             const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
             const diffDays = Math.floor(diffHours / 24);
             
@@ -223,9 +237,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
             } else {
                 const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                if (diffMinutes < 1) {
+                    return 'Just now';
+                }
                 return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
             }
         } catch (e) {
+            console.log('⚠️ Error formatting date:', e, 'Raw value:', lastRun);
             return 'Unknown';
         }
     }
