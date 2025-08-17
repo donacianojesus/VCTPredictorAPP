@@ -2,6 +2,10 @@
 
 A sophisticated web application that predicts VCT match outcomes using **statistical analysis** and **real-time data scraping**.
 
+## 🚀 Live Demo
+
+**Deployed on Railway**: [Your Railway URL here]
+
 ## Architecture Overview
 
 ```
@@ -14,19 +18,26 @@ vct-predictor/
 │       ├── predictor.py      # Statistical prediction service
 │       └── database.py       # Database operations
 ├── 📁 static/                 # Static assets
-│   ├── css/                  # Stylesheets
-│   ├── js/                   # JavaScript files
-│   └── images/               # Images and logos
+│   ├── styles.css            # Main stylesheet
+│   ├── script.js             # JavaScript functionality
+│   └── VCT_2023_Americas.png # VCT branding
 ├── 📁 templates/              # HTML templates
+│   └── index.html            # Main application interface
 ├── 📁 config/                 # Configuration files
+│   ├── base.py               # Base configuration
+│   ├── development.py        # Development settings
+│   └── production.py         # Production settings
 ├── 📁 scripts/                # Utility scripts
-├── 📁 tests/                  # Test files
+│   └── init_railway_db.py    # Railway database initialization
 ├── 📁 docs/                   # Documentation
-├── 📁 deployment/             # Deployment configurations
+│   ├── RAILWAY_DEPLOYMENT.md # Railway deployment guide
+│   └── RAILWAY_SCRAPER_SETUP.md # Scraper service setup
 ├── requirements.txt           # Python dependencies
 ├── wsgi.py                   # Production WSGI entry point
-├── Procfile                  # Heroku deployment
-├── app.json                  # Heroku app configuration
+├── Procfile                  # Railway deployment process
+├── railway.json              # Railway deployment configuration
+├── railway_scraper.py        # Railway scraper service
+├── railway_scraper.json      # Scraper service configuration
 └── README.md                 # This file
 ```
 
@@ -37,7 +48,7 @@ vct-predictor/
 - pip
 - Git
 
-### Installation
+### Local Development
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/vct-predictor.git
@@ -51,16 +62,21 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Initialize database
-python3 scripts/init_db.py
+python3 scripts/init_railway_db.py
 
 # Run the application
-python3 wsgi.py
+python3 run.py
 ```
 
-### Development Mode
+### Production Mode
 ```bash
-export FLASK_ENV=development
-python3 app/__init__.py
+# Set production environment
+export FLASK_ENV=production
+export DATABASE_URL=your_database_url
+export SECRET_KEY=your_secret_key
+
+# Run with production WSGI
+python3 wsgi.py
 ```
 
 ## Features
@@ -71,6 +87,7 @@ python3 app/__init__.py
 - **Responsive Design**: Mobile and desktop optimized
 - **Health Monitoring**: Real-time system status
 - **Auto-scraping**: Daily data updates at 3am
+- **Railway Integration**: Seamless deployment and scaling
 
 ## Configuration
 
@@ -105,16 +122,26 @@ Our prediction system uses **statistical analysis**, not machine learning:
 - Team A predicted winner with 57% confidence
 - Team B has 43% chance to win
 
-## Deployment
+## 🚀 Deployment
 
-### Heroku (Recommended)
+### Railway (Recommended)
 ```bash
-# Deploy to Heroku
-./deployment/deploy_heroku.sh
+# Deploy to Railway
+git push railway main
 ```
 
-### Other Platforms
-See `deployment/` directory for other deployment options.
+**Railway Configuration:**
+- `railway.json` - Deployment settings
+- `Procfile` - Process definition
+- `wsgi.py` - Production entry point
+- `requirements.txt` - Dependencies
+
+### Railway Scraper Service
+The application includes a separate Railway scraper service for automated data updates:
+- `railway_scraper.py` - Scraper service implementation
+- `railway_scraper.json` - Scraper service configuration
+
+See `docs/RAILWAY_SCRAPER_SETUP.md` for detailed setup instructions.
 
 ## 🧪 Testing
 
@@ -129,15 +156,46 @@ python3 -m pytest --cov=app tests/
 ## Monitoring
 
 ### Web Interface
-- Health status dashboard
+- Health status dashboard at `/api/health`
 - Real-time scraper monitoring
 - Performance metrics
 
-### Command Line
-```bash
-# System health check
-python3 scripts/monitor.py
+### API Endpoints
+- `GET /` - Main application interface
+- `GET /api/health` - System health status
+- `POST /api/init-db` - Initialize database with sample data
 
-# View logs
-tail -f logs/app.log
+## 📚 Documentation
+
+- `RAILWAY_DEPLOYMENT.md` - Complete Railway deployment guide
+- `RAILWAY_SCRAPER_SETUP.md` - Scraper service configuration
+- `PROJECT_STRUCTURE.md` - Detailed project architecture
+
+## 🔧 Troubleshooting
+
+### Common Issues
+1. **Database Connection**: Ensure `DATABASE_URL` is set correctly
+2. **App Startup**: Check Railway logs for startup errors
+3. **Dependencies**: Verify all packages in `requirements.txt` are installed
+
+### Railway Logs
+```bash
+# View Railway deployment logs
+railway logs
 ```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+**Built with ❤️ for the Valorant community**
