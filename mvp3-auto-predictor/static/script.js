@@ -146,6 +146,121 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Health Monitoring System
+    console.log('🏥 Setting up health monitoring...');
+    
+    // Function to load scraper health data
+    function loadScraperHealth() {
+        console.log('🔍 Loading scraper health data...');
+        
+        fetch('/api/health')
+            .then(response => response.json())
+            .then(data => {
+                console.log('📊 Health data received:', data);
+                updateHealthDisplay(data);
+            })
+            .catch(error => {
+                console.error('❌ Failed to load health data:', error);
+                updateHealthDisplay({
+                    status: 'error',
+                    message: 'Failed to load health data',
+                    last_run: null,
+                    success_count: 0,
+                    total_runs: 0
+                });
+            });
+    }
+    
+    // Function to update health display
+    function updateHealthDisplay(healthData) {
+        console.log('🔄 Updating health display with:', healthData);
+        
+        // Update health values
+        const lastRunElement = document.getElementById('lastRun');
+        const scraperStatusElement = document.getElementById('scraperStatus');
+        const successRateElement = document.getElementById('successRate');
+        const totalRunsElement = document.getElementById('totalRuns');
+        const healthMessageElement = document.getElementById('healthMessage');
+        
+        if (lastRunElement) {
+            lastRunElement.textContent = formatLastRun(healthData.last_run);
+        }
+        
+        if (scraperStatusElement) {
+            scraperStatusElement.textContent = healthData.status || 'unknown';
+            updateStatusColors(scraperStatusElement, healthData.status);
+        }
+        
+        if (successRateElement) {
+            successRateElement.textContent = calculateSuccessRate(healthData.success_count, healthData.total_runs);
+        }
+        
+        if (totalRunsElement) {
+            totalRunsElement.textContent = healthData.total_runs || 0;
+        }
+        
+        if (healthMessageElement) {
+            healthMessageElement.textContent = healthData.message || '';
+        }
+        
+        console.log('✅ Health display updated');
+    }
+    
+    // Function to format last run time
+    function formatLastRun(lastRun) {
+        if (!lastRun || lastRun === 'None') return 'Never';
+        
+        try {
+            const date = new Date(lastRun);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffHours / 24);
+            
+            if (diffDays > 0) {
+                return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            } else if (diffHours > 0) {
+                return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            } else {
+                const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+            }
+        } catch (e) {
+            return 'Unknown';
+        }
+    }
+    
+    // Function to calculate success rate
+    function calculateSuccessRate(successCount, totalRuns) {
+        if (totalRuns === 0) return '0%';
+        return `${Math.round((successCount / totalRuns) * 100)}%`;
+    }
+    
+    // Function to update status colors
+    function updateStatusColors(statusElement, status) {
+        // Remove existing status classes
+        statusElement.className = 'health-value';
+        
+        // Add appropriate status class
+        if (status === 'success') {
+            statusElement.classList.add('status-success');
+        } else if (status === 'error' || status === 'failed') {
+            statusElement.classList.add('status-error');
+        } else if (status === 'running') {
+            statusElement.classList.add('status-warning');
+        } else if (status === 'initializing') {
+            statusElement.classList.add('status-info');
+        }
+    }
+    
+    // Load health data immediately
+    loadScraperHealth();
+    
+    // Auto-refresh health status every 30 seconds
+    setInterval(loadScraperHealth, 30000);
+    
+    console.log('🏥 Health monitoring system initialized');
+    
     // Update VCT Data Function
     function updateVCTData() {
         if (!updateBtn) return;
