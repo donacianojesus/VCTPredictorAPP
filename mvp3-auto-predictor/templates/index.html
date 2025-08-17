@@ -101,20 +101,18 @@
                             <label for="team1">Team 1:</label>
                             <select name="team1" id="team1" required>
                                 <option value="">Select Team 1</option>
-                                <optgroup label="Group Alpha">
-                                    {% for team in teams_with_stats if team.group_name == 'Alpha' %}
-                                    <option value="{{ team.id }}" {% if request.form.get('team1') == team.id|string %}selected{% endif %}>
-                                        {{ team.team }} ({{ team.record }})
-                                    </option>
-                                    {% endfor %}
-                                </optgroup>
-                                <optgroup label="Group Omega">
-                                    {% for team in teams_with_stats if team.group_name == 'Omega' %}
-                                    <option value="{{ team.id }}" {% if request.form.get('team1') == team.id|string %}selected{% endif %}>
-                                        {{ team.team }} ({{ team.record }})
-                                    </option>
-                                    {% endfor %}
-                                </optgroup>
+                                <option value="" disabled>--- Group Alpha ---</option>
+                                {% for team in teams_with_stats if team.group_name == 'Alpha' %}
+                                <option value="{{ team.id }}" {% if request.form.get('team1') == team.id|string %}selected{% endif %}>
+                                    {{ team.team }} ({{ team.record }})
+                                </option>
+                                {% endfor %}
+                                <option value="" disabled>--- Group Omega ---</option>
+                                {% for team in teams_with_stats if team.group_name == 'Omega' %}
+                                <option value="{{ team.id }}" {% if request.form.get('team1') == team.id|string %}selected{% endif %}>
+                                    {{ team.team }} ({{ team.record }})
+                                </option>
+                                {% endfor %}
                             </select>
                         </div>
                         
@@ -122,20 +120,18 @@
                             <label for="team2">Team 2:</label>
                             <select name="team2" id="team2" required>
                                 <option value="">Select Team 2</option>
-                                <optgroup label="Group Alpha">
-                                    {% for team in teams_with_stats if team.group_name == 'Alpha' %}
-                                    <option value="{{ team.id }}" {% if request.form.get('team2') == team.id|string %}selected{% endif %}>
-                                        {{ team.team }} ({{ team.record }})
-                                    </option>
-                                    {% endfor %}
-                                </optgroup>
-                                <optgroup label="Group Omega">
-                                    {% for team in teams_with_stats if team.group_name == 'Omega' %}
-                                    <option value="{{ team.id }}" {% if request.form.get('team2') == team.id|string %}selected{% endif %}>
-                                        {{ team.team }} ({{ team.record }})
-                                    </option>
-                                    {% endfor %}
-                                </optgroup>
+                                <option value="" disabled>--- Group Alpha ---</option>
+                                {% for team in teams_with_stats if team.group_name == 'Alpha' %}
+                                <option value="{{ team.id }}" {% if request.form.get('team2') == team.id|string %}selected{% endif %}>
+                                    {{ team.team }} ({{ team.record }})
+                                </option>
+                                {% endfor %}
+                                <option value="" disabled>--- Group Omega ---</option>
+                                {% for team in teams_with_stats if team.group_name == 'Omega' %}
+                                <option value="{{ team.id }}" {% if request.form.get('team2') == team.id|string %}selected{% endif %}>
+                                    {{ team.team }} ({{ team.record }})
+                                </option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>

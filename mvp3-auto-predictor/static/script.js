@@ -183,15 +183,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const predictBtn = document.querySelector('.predict-btn');
     
     if (team1Select && team2Select && predictBtn) {
-        // Function to get team group from option
-        function getTeamGroup(selectElement) {
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            if (selectedOption && selectedOption.parentElement) {
-                return selectedOption.parentElement.label;
-            }
-            return null;
-        }
-        
         // Function to validate team selection
         function validateTeamSelection() {
             const team1Value = team1Select.value;
@@ -205,21 +196,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     predictBtn.disabled = true;
                     predictBtn.title = 'Please select two different teams';
                 } else {
-                    // Check if both teams are from the same group
-                    const team1Group = getTeamGroup(team1Select);
-                    const team2Group = getTeamGroup(team2Select);
-                    
-                    console.log('Team 1 Group:', team1Group, 'Team 2 Group:', team2Group);
-                    
-                    if (team1Group && team2Group && team1Group === team2Group) {
-                        console.log('Valid selection - enabling button');
-                        predictBtn.disabled = false;
-                        predictBtn.title = 'Click to predict the winner';
-                    } else {
-                        console.log('Different groups - disabling button');
-                        predictBtn.disabled = true;
-                        predictBtn.title = 'Teams must be from the same group';
-                    }
+                    // For now, just enable the button if different teams are selected
+                    // We'll let the server-side validation handle group restrictions
+                    console.log('Different teams selected - enabling button');
+                    predictBtn.disabled = false;
+                    predictBtn.title = 'Click to predict the winner';
                 }
             } else {
                 console.log('Missing team selection - disabling button');
@@ -234,6 +215,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Initial validation
         validateTeamSelection();
+        
+        // Debug: Log all options
+        console.log('=== DEBUG: All options ===');
+        for (let i = 0; i < team1Select.options.length; i++) {
+            const option = team1Select.options[i];
+            console.log(`Option ${i}: "${option.text}" - Value: "${option.value}"`);
+        }
+        
+        // Test: Manually trigger validation after a short delay
+        setTimeout(() => {
+            console.log('=== TESTING VALIDATION ===');
+            validateTeamSelection();
+        }, 1000);
     }
 });
 

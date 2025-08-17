@@ -767,6 +767,19 @@ select:focus {
     border-color: #3498db;
 }
 
+.team-selector select option[disabled] {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-weight: 600;
+    font-style: italic;
+    text-align: center;
+}
+
+.team-selector select option:not([disabled]) {
+    background-color: white;
+    color: #2c3e50;
+}
+
 .predict-btn {
     background: linear-gradient(135deg, #e74c3c, #c0392b);
     color: white;
