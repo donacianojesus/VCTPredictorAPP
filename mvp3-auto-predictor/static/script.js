@@ -194,21 +194,35 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Function to validate team selection
         function validateTeamSelection() {
-            const team1Group = getTeamGroup(team1Select);
-            const team2Group = getTeamGroup(team2Select);
+            const team1Value = team1Select.value;
+            const team2Value = team2Select.value;
             
-            if (team1Select.value && team2Select.value) {
-                if (team1Select.value === team2Select.value) {
+            console.log('Team 1:', team1Value, 'Team 2:', team2Value);
+            
+            if (team1Value && team2Value) {
+                if (team1Value === team2Value) {
+                    console.log('Same team selected - disabling button');
                     predictBtn.disabled = true;
                     predictBtn.title = 'Please select two different teams';
-                } else if (team1Group && team2Group && team1Group !== team2Group) {
-                    predictBtn.disabled = true;
-                    predictBtn.title = 'Teams must be from the same group';
                 } else {
-                    predictBtn.disabled = false;
-                    predictBtn.title = 'Click to predict the winner';
+                    // Check if both teams are from the same group
+                    const team1Group = getTeamGroup(team1Select);
+                    const team2Group = getTeamGroup(team2Select);
+                    
+                    console.log('Team 1 Group:', team1Group, 'Team 2 Group:', team2Group);
+                    
+                    if (team1Group && team2Group && team1Group === team2Group) {
+                        console.log('Valid selection - enabling button');
+                        predictBtn.disabled = false;
+                        predictBtn.title = 'Click to predict the winner';
+                    } else {
+                        console.log('Different groups - disabling button');
+                        predictBtn.disabled = true;
+                        predictBtn.title = 'Teams must be from the same group';
+                    }
                 }
             } else {
+                console.log('Missing team selection - disabling button');
                 predictBtn.disabled = true;
                 predictBtn.title = 'Please select two teams';
             }

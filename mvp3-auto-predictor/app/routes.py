@@ -531,6 +531,29 @@ def index():
                                 error_message="No VCT data available. Please use the Update button to fetch current tournament data.",
                                 last_updated=None)
         
+        # Sort teams by record (best to worst)
+        def parse_record(record_str):
+            """Parse record string like '4-0' to get wins and losses"""
+            try:
+                if '-' in record_str:
+                    wins, losses = map(int, record_str.split('-'))
+                    return wins, losses
+                elif '–' in record_str:  # Handle en dash
+                    wins, losses = map(int, record_str.split('–'))
+                    return wins, losses
+                else:
+                    return 0, 0
+            except:
+                return 0, 0
+        
+        def sort_teams(team):
+            """Sort key for teams: wins (desc), then losses (asc)"""
+            wins, losses = parse_record(team['record'])
+            return (-wins, losses)  # Negative wins for descending order
+        
+        # Sort teams within each group
+        teams_with_stats.sort(key=sort_teams)
+        
         # Handle form submission for prediction
         prediction_result = None
         error_message = None
