@@ -36,22 +36,64 @@ class VCTScraper:
         
         # Remove common suffixes and clean up
         team_name = team_name.strip()
-        team_name = team_name.replace('United States', '').replace('Spoiler hidden', '').strip()
+        
+        # Remove country suffixes and other unwanted text
+        suffixes_to_remove = [
+            'United States', 'Brazil', 'Argentina', 'Chile', 'Mexico', 'Canada',
+            'Spoiler hidden', 'Spoiler', 'hidden', 'Esports', 'esports'
+        ]
+        
+        for suffix in suffixes_to_remove:
+            team_name = team_name.replace(suffix, '').strip()
+        
+        # Clean up any remaining artifacts
+        team_name = team_name.replace('  ', ' ')  # Remove double spaces
+        team_name = team_name.strip()
         
         # Standardize common team names
         name_mapping = {
             '2game': '2Game Esports',
-            '2game esports': '2Game Esports',
             'furia': 'FURIA',
             'kru': 'KRÜ',
-            'kru esports': 'KRÜ',
             'leviatan': 'Leviatán',
-            'leviatan esports': 'Leviatán',
             'shopify': 'Shopify Rebellion',
-            'shopify rebellion esports': 'Shopify Rebellion'
+            'mibr': 'MIBR',
+            'loud': 'LOUD',
+            'nrg': 'NRG',
+            'cloud9': 'Cloud9',
+            'g2': 'G2 Esports',
+            'evil geniuses': 'Evil Geniuses',
+            '100 thieves': '100 Thieves',
+            'sentinels': 'Sentinels'
         }
         
-        return name_mapping.get(team_name.lower(), team_name)
+        # Try exact match first
+        if team_name.lower() in name_mapping:
+            return name_mapping[team_name.lower()]
+        
+        # Try partial matches
+        for partial, full_name in name_mapping.items():
+            if partial in team_name.lower():
+                return full_name
+        
+        # If no mapping found, capitalize properly
+        if team_name:
+            # Handle special cases like "G2" -> "G2 Esports"
+            if team_name.upper() == 'G2':
+                return 'G2 Esports'
+            elif team_name.upper() == 'NRG':
+                return 'NRG'
+            elif team_name.upper() == 'MIBR':
+                return 'MIBR'
+            elif team_name.upper() == 'LOUD':
+                return 'LOUD'
+            elif team_name.upper() == 'FURIA':
+                return 'FURIA'
+            else:
+                # Standard capitalization
+                return team_name.title()
+        
+        return "Unknown Team"
 
     def scrape_vct_standings(self):
         """Scrape VCT standings from multiple sources"""

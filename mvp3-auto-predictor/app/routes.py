@@ -442,6 +442,39 @@ def test_scraper_detailed():
             'error': str(e)
         }), 500
 
+@main_bp.route('/api/reset-database', methods=['POST'])
+def reset_database():
+    """Reset the database and clear all team data"""
+    try:
+        # Check if database is available
+        db_available, message = check_db_available()
+        if not db_available:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 503
+        
+        # Clear all teams
+        success = current_app.db.clear_all_teams()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Database reset successfully. All team data cleared.',
+                'teams_count': 0
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to reset database'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @main_bp.route('/', methods=['GET', 'POST'])
 def index():
     """Main page with team selection and prediction"""

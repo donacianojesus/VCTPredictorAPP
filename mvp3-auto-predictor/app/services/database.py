@@ -610,6 +610,21 @@ class MatchDatabase:
         finally:
             conn.close()
 
+    def clear_all_teams(self):
+        """Clear all team data from the database"""
+        try:
+            with self.get_connection() as conn:
+                # Delete all records from group_standings table
+                result = conn.execute(text("DELETE FROM group_standings"))
+                conn.commit()
+                
+                print(f"🗑️ Cleared {result.rowcount} team records from database")
+                return True
+                
+        except Exception as e:
+            print(f"❌ Error clearing database: {e}")
+            return False
+
 # Usage example and testing
 if __name__ == "__main__":
     # Initialize database

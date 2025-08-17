@@ -17,11 +17,18 @@ document.addEventListener('DOMContentLoaded', function() {
 // Update Data Button Functionality
 document.addEventListener('DOMContentLoaded', function() {
     const updateBtn = document.getElementById('updateDataBtn');
+    const resetBtn = document.getElementById('resetDataBtn');
     const updateStatus = document.getElementById('updateStatus');
     
     if (updateBtn) {
         updateBtn.addEventListener('click', function() {
             updateVCTData();
+        });
+    }
+    
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            resetDatabase();
         });
     }
     
@@ -64,6 +71,53 @@ document.addEventListener('DOMContentLoaded', function() {
             updateBtn.disabled = false;
             updateBtn.querySelector('.btn-text').style.display = 'inline';
             updateBtn.querySelector('.loading-spinner').style.display = 'none';
+        });
+    }
+    
+    function resetDatabase() {
+        // Confirm before resetting
+        if (!confirm('⚠️ Are you sure you want to reset the database? This will delete ALL team data and cannot be undone.')) {
+            return;
+        }
+        
+        // Disable button and show loading
+        resetBtn.disabled = true;
+        resetBtn.querySelector('.btn-text').style.display = 'none';
+        resetBtn.querySelector('.loading-spinner').style.display = 'inline-block';
+        updateStatus.textContent = 'Resetting database...';
+        updateStatus.className = 'update-status info';
+        
+        // Make API call to reset database
+        fetch('/api/reset-database', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateStatus.textContent = '✅ Database reset successfully! All team data cleared.';
+                updateStatus.className = 'update-status success';
+                
+                // Refresh the page to show empty state
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                updateStatus.textContent = `❌ Reset failed: ${data.error || 'Unknown error'}`;
+                updateStatus.className = 'update-status error';
+            }
+        })
+        .catch(error => {
+            updateStatus.textContent = `❌ Reset failed: ${error.message}`;
+            updateStatus.className = 'update-status error';
+        })
+        .finally(() => {
+            // Re-enable button and hide loading
+            resetBtn.disabled = false;
+            resetBtn.querySelector('.btn-text').style.display = 'inline';
+            resetBtn.querySelector('.loading-spinner').style.display = 'none';
         });
     }
 });

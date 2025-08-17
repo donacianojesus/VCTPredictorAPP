@@ -12,10 +12,16 @@
             <h1>VCT Predictor</h1>
             <p>Predict match outcomes based on current VCT 2025 Stage 2 Americas standings</p>
             <div class="update-section">
-                <button id="updateDataBtn" class="update-btn">
-                    <span class="btn-text">🔄 Update VCT Data</span>
-                    <span class="loading-spinner" style="display: none;">⏳</span>
-                </button>
+                <div class="button-group">
+                    <button id="updateDataBtn" class="update-btn">
+                        <span class="btn-text">🔄 Update VCT Data</span>
+                        <span class="loading-spinner" style="display: none;">⏳</span>
+                    </button>
+                    <button id="resetDataBtn" class="reset-btn">
+                        <span class="btn-text">🗑️ Reset Database</span>
+                        <span class="loading-spinner" style="display: none;">⏳</span>
+                    </button>
+                </div>
                 <div id="updateStatus" class="update-status"></div>
             </div>
         </div>
