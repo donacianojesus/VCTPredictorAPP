@@ -8,6 +8,9 @@ from flask import Blueprint, render_template, request, jsonify, current_app
 from datetime import datetime
 import os
 import json
+import threading
+import time
+from bs4 import BeautifulSoup
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)
@@ -17,6 +20,26 @@ def check_db_available():
     if not current_app.db:
         return False, "Database not available"
     return True, "Database available"
+
+def run_auto_scraper():
+    """Run the scraper in a background thread"""
+    try:
+        if current_app.db and current_app.predictor:
+            from app.services.scraper import VCTScraper
+            
+            # Create scraper instance
+            scraper = VCTScraper()
+            
+            # Run the scrape
+            success = scraper.run_scrape()
+            
+            if success:
+                print("✅ Auto-scraper completed successfully")
+            else:
+                print("❌ Auto-scraper failed")
+                
+    except Exception as e:
+        print(f"❌ Auto-scraper error: {e}")
 
 @main_bp.route('/api/health')
 def api_health():
@@ -58,6 +81,45 @@ def api_health():
             'success_count': 0,
             'total_runs': 0,
             'success_rate': 0
+        }), 500
+
+@main_bp.route('/api/run-scraper')
+def run_scraper():
+    """Manually trigger the scraper"""
+    try:
+        # Check if database is available
+        db_available, message = check_db_available()
+        if not db_available:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 503
+        
+        # Check if scraper is available
+        if not hasattr(current_app, 'scraper_service'):
+            from app.services.scraper import VCTScraper
+            current_app.scraper_service = VCTScraper()
+        
+        # Run the scraper
+        success = current_app.scraper_service.run_scrape()
+        
+        if success:
+            teams = current_app.db.get_all_teams_with_stats()
+            return jsonify({
+                'success': True,
+                'message': f'Scraper completed successfully. {len(teams)} teams in database.',
+                'teams_count': len(teams)
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Scraper failed. Check logs for details.'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
         }), 500
 
 @main_bp.route('/api/init-db')
@@ -117,6 +179,122 @@ def init_database():
             'message': f'Database initialized with {len(teams)} teams',
             'teams_count': len(teams),
             'scraper_status': 'idle'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/api/debug-scraper')
+def debug_scraper():
+    """Debug endpoint to test scraper and find working VCT URLs"""
+    try:
+        # Check if database is available
+        db_available, message = check_db_available()
+        if not db_available:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 503
+        
+        # Check if scraper is available
+        if not hasattr(current_app, 'scraper_service'):
+            from app.services.scraper import VCTScraper
+            current_app.scraper_service = VCTScraper()
+        
+        # Test different VCT URLs
+        test_urls = [
+            "https://www.vlr.gg/event/standings/2025-americas-stage-2",
+            "https://www.vlr.gg/event/standings/2025-americas-stage-1",
+            "https://www.vlr.gg/event/standings/2024-americas-stage-2",
+            "https://www.vlr.gg/event/standings/2024-americas-stage-1"
+        ]
+        
+        results = []
+        for url in test_urls:
+            try:
+                response = current_app.scraper_service.scraper.get(url, timeout=10)
+                status = response.status_code
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    standings_table = (
+                        soup.find('table', class_='wf-table') or
+                        soup.find('table', class_='standings-table') or
+                        soup.find('table', class_='event-standings-table') or
+                        soup.find('table')
+                    )
+                    has_table = standings_table is not None
+                    results.append({
+                        'url': url,
+                        'status': status,
+                        'has_table': has_table,
+                        'working': has_table
+                    })
+                else:
+                    results.append({
+                        'url': url,
+                        'status': status,
+                        'has_table': False,
+                        'working': False
+                    })
+            except Exception as e:
+                results.append({
+                    'url': url,
+                    'status': 'error',
+                    'has_table': False,
+                    'working': False,
+                    'error': str(e)
+                })
+        
+        # Try to find working VCT 2025 URLs
+        try:
+            working_urls = current_app.scraper_service.find_vct_2025_urls()
+            url_search_success = True
+            found_urls = working_urls
+        except Exception as e:
+            url_search_success = False
+            found_urls = []
+            url_search_error = str(e)
+        
+        # Try to run a test scrape
+        try:
+            test_scrape = current_app.scraper_service.scrape_vct_standings()
+            scrape_success = test_scrape is not False
+            teams_count = len(test_scrape) if test_scrape else 0
+        except Exception as e:
+            scrape_success = False
+            teams_count = 0
+            scrape_error = str(e)
+        
+        # Inspect a working page if available
+        page_inspection = None
+        if found_urls:
+            try:
+                page_inspection = current_app.scraper_service.inspect_vct_page(found_urls[0])
+                if page_inspection:
+                    page_inspection = "Page inspection completed successfully"
+                else:
+                    page_inspection = "Page inspection failed"
+            except Exception as e:
+                page_inspection = f"Page inspection error: {str(e)}"
+        
+        return jsonify({
+            'success': True,
+            'url_tests': results,
+            'url_search': {
+                'success': url_search_success,
+                'found_urls': found_urls,
+                'error': url_search_error if 'url_search_error' in locals() else None
+            },
+            'scrape_test': {
+                'success': scrape_success,
+                'teams_count': teams_count,
+                'error': scrape_error if 'scrape_error' in locals() else None
+            },
+            'page_inspection': page_inspection,
+            'message': 'Debug information collected'
         })
         
     except Exception as e:

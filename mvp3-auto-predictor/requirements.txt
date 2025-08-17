@@ -8,7 +8,6 @@ blinker==1.6.3
 cloudscraper==1.2.71
 beautifulsoup4==4.12.2
 requests==2.31.0
-lxml==5.1.0
 gunicorn==21.2.0
 python-dotenv==1.0.0
 structlog==23.1.0
