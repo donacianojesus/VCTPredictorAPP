@@ -77,9 +77,25 @@ class VCTScraper:
                     
                     if standings_table:
                         logger.info(f"✅ Found standings table at {url}")
+                        
+                        # Count total rows to understand the data size
+                        rows = standings_table.find_all('tr')
+                        logger.info(f"📊 Table has {len(rows)} total rows")
+                        
+                        # Look for group indicators first
+                        group_indicators = self.find_group_indicators(standings_table)
+                        logger.info(f"🏷️ Group indicators found: {group_indicators}")
+                        
+                        # Parse the table
                         teams_data = self.parse_standings_table(standings_table, url)
                         if teams_data:
                             logger.info(f"✅ Successfully extracted {len(teams_data)} teams from {url}")
+                            
+                            # Log group distribution
+                            alpha_count = len([t for t in teams_data if t['group_name'] == 'Alpha'])
+                            omega_count = len([t for t in teams_data if t['group_name'] == 'Omega'])
+                            logger.info(f"📊 Group distribution: Alpha={alpha_count}, Omega={omega_count}")
+                            
                             break
                     else:
                         logger.warning(f"⚠️ No standings table found at {url}")
@@ -504,4 +520,58 @@ class VCTScraper:
             
         except Exception as e:
             logger.error(f"❌ Failed to inspect page: {e}")
+            return None
+
+    def analyze_vct_page_structure(self, url):
+        """Analyze the VCT page structure to understand the layout"""
+        try:
+            logger.info(f"🔍 Analyzing VCT page structure: {url}")
+            
+            response = self.scraper.get(url, timeout=30)
+            if response.status_code != 200:
+                logger.error(f"❌ Page returned status {response.status_code}")
+                return None
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Look for all tables
+            all_tables = soup.find_all('table')
+            logger.info(f"📊 Found {len(all_tables)} total tables on page")
+            
+            # Look for any divs or sections that might contain group information
+            group_sections = soup.find_all(['div', 'section'], class_=lambda x: x and any(word in x.lower() for word in ['group', 'alpha', 'omega', 'standings']))
+            logger.info(f"🏷️ Found {len(group_sections)} potential group sections")
+            
+            for i, section in enumerate(group_sections):
+                section_text = section.get_text(strip=True)
+                if len(section_text) > 10:  # Only show sections with meaningful content
+                    logger.info(f"  Section {i+1}: {section_text[:100]}...")
+            
+            # Look for specific group indicators
+            page_text = soup.get_text()
+            alpha_count = page_text.lower().count('alpha')
+            omega_count = page_text.lower().count('omega')
+            group_a_count = page_text.lower().count('group a')
+            group_b_count = page_text.lower().count('group b')
+            
+            logger.info(f"🏷️ Text analysis:")
+            logger.info(f"  - 'Alpha' mentioned: {alpha_count} times")
+            logger.info(f"  - 'Omega' mentioned: {omega_count} times")
+            logger.info(f"  - 'Group A' mentioned: {group_a_count} times")
+            logger.info(f"  - 'Group B' mentioned: {group_b_count} times")
+            
+            # Look for team names to understand the scope
+            team_indicators = ['team', 'sentinels', 'loud', '100 thieves', 'nrg', 'cloud9', 'mibr', 'leviatán', 'krü', 'furia', 'evil geniuses', 'g2 esports', 'shopify rebellion']
+            found_teams = []
+            
+            for indicator in team_indicators:
+                if indicator.lower() in page_text.lower():
+                    found_teams.append(indicator)
+            
+            logger.info(f"🏆 Found team references: {found_teams}")
+            
+            return soup
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to analyze page structure: {e}")
             return None

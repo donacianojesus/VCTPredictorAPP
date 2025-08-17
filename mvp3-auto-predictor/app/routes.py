@@ -270,15 +270,26 @@ def debug_scraper():
         
         # Inspect a working page if available
         page_inspection = None
+        page_analysis = None
         if found_urls:
             try:
+                # First do basic page inspection
                 page_inspection = current_app.scraper_service.inspect_vct_page(found_urls[0])
                 if page_inspection:
                     page_inspection = "Page inspection completed successfully"
                 else:
                     page_inspection = "Page inspection failed"
+                
+                # Then do detailed page structure analysis
+                page_analysis = current_app.scraper_service.analyze_vct_page_structure(found_urls[0])
+                if page_analysis:
+                    page_analysis = "Page structure analysis completed successfully"
+                else:
+                    page_analysis = "Page structure analysis failed"
+                    
             except Exception as e:
                 page_inspection = f"Page inspection error: {str(e)}"
+                page_analysis = f"Page analysis error: {str(e)}"
         
         return jsonify({
             'success': True,
@@ -294,6 +305,7 @@ def debug_scraper():
                 'error': scrape_error if 'scrape_error' in locals() else None
             },
             'page_inspection': page_inspection,
+            'page_analysis': page_analysis,
             'message': 'Debug information collected'
         })
         
