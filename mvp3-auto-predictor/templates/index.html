@@ -101,11 +101,20 @@
                             <label for="team1">Team 1:</label>
                             <select name="team1" id="team1" required>
                                 <option value="">Select Team 1</option>
-                                {% for team in teams_with_stats %}
-                                <option value="{{ team.id }}" {% if request.form.get('team1') == team.id|string %}selected{% endif %}>
-                                    {{ team.team }} ({{ team.group_name }})
-                                </option>
-                                {% endfor %}
+                                <optgroup label="Group Alpha">
+                                    {% for team in teams_with_stats if team.group_name == 'Alpha' %}
+                                    <option value="{{ team.id }}" {% if request.form.get('team1') == team.id|string %}selected{% endif %}>
+                                        {{ team.team }} ({{ team.record }})
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Group Omega">
+                                    {% for team in teams_with_stats if team.group_name == 'Omega' %}
+                                    <option value="{{ team.id }}" {% if request.form.get('team1') == team.id|string %}selected{% endif %}>
+                                        {{ team.team }} ({{ team.record }})
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
                             </select>
                         </div>
                         
@@ -113,13 +122,26 @@
                             <label for="team2">Team 2:</label>
                             <select name="team2" id="team2" required>
                                 <option value="">Select Team 2</option>
-                                {% for team in teams_with_stats %}
-                                <option value="{{ team.id }}" {% if request.form.get('team2') == team.id|string %}selected{% endif %}>
-                                    {{ team.team }} ({{ team.group_name }})
-                                </option>
-                                {% endfor %}
+                                <optgroup label="Group Alpha">
+                                    {% for team in teams_with_stats if team.group_name == 'Alpha' %}
+                                    <option value="{{ team.id }}" {% if request.form.get('team2') == team.id|string %}selected{% endif %}>
+                                        {{ team.team }} ({{ team.record }})
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Group Omega">
+                                    {% for team in teams_with_stats if team.group_name == 'Omega' %}
+                                    <option value="{{ team.id }}" {% if request.form.get('team2') == team.id|string %}selected{% endif %}>
+                                        {{ team.team }} ({{ team.record }})
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="prediction-rules">
+                        <p><strong>📋 Rules:</strong> Teams can only play against other teams in the same group during the group stage.</p>
                     </div>
                     
                     <button type="submit" class="predict-btn">Predict Winner</button>
@@ -133,8 +155,8 @@
                     {% else %}
                         <div class="prediction-result">
                             <h3>Prediction Result</h3>
-                            <p><strong>Winner:</strong> {{ prediction_result.winner }}</p>
-                            <p><strong>Confidence:</strong> {{ prediction_result.confidence }}%</p>
+                            <p><strong>Winner:</strong> {{ prediction_result.predicted_winner }}</p>
+                            <p><strong>Confidence:</strong> {{ "%.1f"|format(prediction_result.confidence * 100) }}%</p>
                             {% if prediction_result.reasoning %}
                             <p><strong>Reasoning:</strong> {{ prediction_result.reasoning }}</p>
                             {% endif %}

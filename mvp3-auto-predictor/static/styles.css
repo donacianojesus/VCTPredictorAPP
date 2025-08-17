@@ -756,9 +756,17 @@ select:focus {
     box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
 }
 
-.predict-btn:hover {
+.predict-btn:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.predict-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.6;
 }
 
 .prediction-result {
@@ -871,4 +879,23 @@ select:focus {
     .standings-table {
         font-size: 0.9rem;
     }
+}
+
+.prediction-rules {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.prediction-rules p {
+    margin: 0;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.prediction-rules strong {
+    color: #2c3e50;
 }

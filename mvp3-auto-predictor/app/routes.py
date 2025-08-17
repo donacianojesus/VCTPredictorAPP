@@ -533,17 +533,37 @@ def index():
         
         # Handle form submission for prediction
         prediction_result = None
+        error_message = None
+        
         if request.method == 'POST':
             try:
                 team1_id = request.form.get('team1')
                 team2_id = request.form.get('team2')
                 
-                if team1_id and team2_id and team1_id != team2_id:
-                    prediction_result = current_app.predictor.predict_match(team1_id, team2_id)
+                if not team1_id or not team2_id:
+                    error_message = 'Please select two teams'
+                elif team1_id == team2_id:
+                    error_message = 'Please select two different teams'
                 else:
-                    prediction_result = {'error': 'Please select two different teams'}
+                    # Find the selected teams
+                    team1 = next((t for t in teams_with_stats if str(t['id']) == team1_id), None)
+                    team2 = next((t for t in teams_with_stats if str(t['id']) == team2_id), None)
+                    
+                    if not team1 or not team2:
+                        error_message = 'One or both selected teams are invalid'
+                    elif team1['group_name'] != team2['group_name']:
+                        error_message = f'Teams must be from the same group. {team1["team"]} is in Group {team1["group_name"]} and {team2["team"]} is in Group {team2["group_name"]}'
+                    else:
+                        # Make prediction
+                        try:
+                            prediction_result = current_app.predictor.predict_match_winner(team1['team'], team2['team'])
+                            if 'error' in prediction_result:
+                                error_message = prediction_result['error']
+                        except Exception as e:
+                            error_message = f'Prediction failed: {str(e)}'
+                            
             except Exception as e:
-                prediction_result = {'error': f'Prediction failed: {str(e)}'}
+                error_message = f'An error occurred: {str(e)}'
         
         # Get last updated time
         last_updated = None
@@ -557,7 +577,7 @@ def index():
         return render_template('index.html',
                             teams_with_stats=teams_with_stats,
                             prediction_result=prediction_result,
-                            error_message=None,
+                            error_message=error_message,
                             last_updated=last_updated)
                             
     except Exception as e:

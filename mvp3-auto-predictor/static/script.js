@@ -176,6 +176,53 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Team Selection Validation
+document.addEventListener('DOMContentLoaded', function() {
+    const team1Select = document.getElementById('team1');
+    const team2Select = document.getElementById('team2');
+    const predictBtn = document.querySelector('.predict-btn');
+    
+    if (team1Select && team2Select && predictBtn) {
+        // Function to get team group from option
+        function getTeamGroup(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            if (selectedOption && selectedOption.parentElement) {
+                return selectedOption.parentElement.label;
+            }
+            return null;
+        }
+        
+        // Function to validate team selection
+        function validateTeamSelection() {
+            const team1Group = getTeamGroup(team1Select);
+            const team2Group = getTeamGroup(team2Select);
+            
+            if (team1Select.value && team2Select.value) {
+                if (team1Select.value === team2Select.value) {
+                    predictBtn.disabled = true;
+                    predictBtn.title = 'Please select two different teams';
+                } else if (team1Group && team2Group && team1Group !== team2Group) {
+                    predictBtn.disabled = true;
+                    predictBtn.title = 'Teams must be from the same group';
+                } else {
+                    predictBtn.disabled = false;
+                    predictBtn.title = 'Click to predict the winner';
+                }
+            } else {
+                predictBtn.disabled = true;
+                predictBtn.title = 'Please select two teams';
+            }
+        }
+        
+        // Add event listeners
+        team1Select.addEventListener('change', validateTeamSelection);
+        team2Select.addEventListener('change', validateTeamSelection);
+        
+        // Initial validation
+        validateTeamSelection();
+    }
+});
+
 // Get team group information from the page
 const teamGroups = {};
 
