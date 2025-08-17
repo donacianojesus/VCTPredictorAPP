@@ -83,9 +83,9 @@ def api_health():
             'success_rate': 0
         }), 500
 
-@main_bp.route('/api/run-scraper')
+@main_bp.route('/api/run-scraper', methods=['GET', 'POST'])
 def run_scraper():
-    """Manually trigger the scraper"""
+    """Run the scraper manually"""
     try:
         # Check if database is available
         db_available, message = check_db_available()
@@ -104,16 +104,22 @@ def run_scraper():
         success = current_app.scraper_service.run_scrape()
         
         if success:
-            teams = current_app.db.get_all_teams_with_stats()
+            # Get updated team count
+            try:
+                teams_with_stats = current_app.db.get_all_teams_with_stats()
+                teams_count = len(teams_with_stats) if teams_with_stats else 0
+            except:
+                teams_count = 0
+            
             return jsonify({
                 'success': True,
-                'message': f'Scraper completed successfully. {len(teams)} teams in database.',
-                'teams_count': len(teams)
+                'message': 'Scraper completed successfully',
+                'teams_count': teams_count
             })
         else:
             return jsonify({
                 'success': False,
-                'error': 'Scraper failed. Check logs for details.'
+                'error': 'Scraper failed to complete'
             }), 500
             
     except Exception as e:
@@ -438,71 +444,59 @@ def test_scraper_detailed():
 
 @main_bp.route('/', methods=['GET', 'POST'])
 def index():
-    """Main page with team selection and predictions"""
-    # Check if database is available
-    db_available, message = check_db_available()
-    if not db_available:
-        return render_template(
-            'index.html',
-            teams_by_group={'Alpha': [], 'Omega': []},
-            selected_team1=None,
-            selected_team2=None,
-            prediction=None,
-            error_message=f"Database not available: {message}",
-            last_updated=None
-        )
-    
-    # Get all teams with their stats and group info
-    teams_with_stats = current_app.db.get_all_teams_with_stats()
-    
-    # Organize teams by group for display
-    teams_by_group = {'Alpha': [], 'Omega': []}
-    for team in teams_with_stats:
-        if team['group_name'] in teams_by_group:
-            teams_by_group[team['group_name']].append({
-                'name': team['team'],
-                'record': team['record'],
-                'map_diff': team['map_diff'],
-                'round_diff': team['round_diff'],
-                'delta': team['delta']
-            })
-    
-    selected_team1 = None
-    selected_team2 = None
-    prediction = None
-    error_message = None
-    
-    if request.method == 'POST':
-        selected_team1 = request.form.get('team1')
-        selected_team2 = request.form.get('team2')
+    """Main page with team selection and prediction"""
+    try:
+        # Check if database is available
+        db_available, message = check_db_available()
+        if not db_available:
+            return render_template('index.html', 
+                                teams_with_stats=[],
+                                prediction_result=None,
+                                error_message="Database not available. Please try again later.",
+                                last_updated=None)
         
-        if not selected_team1 or not selected_team2:
-            error_message = "Please select two teams."
-        elif selected_team1 == selected_team2:
-            error_message = "Please select two different teams."
-        else:
-            # Validate both teams exist and belong to the same group
-            team1_data = next((t for t in teams_with_stats if t['team'] == selected_team1), None)
-            team2_data = next((t for t in teams_with_stats if t['team'] == selected_team2), None)
-            
-            if not team1_data or not team2_data:
-                error_message = "One or both selected teams are invalid."
-            elif team1_data['group_name'] != team2_data['group_name']:
-                error_message = "Teams must be from the same group."
-            else:
-                try:
-                    prediction = current_app.predictor.predict_match_winner(selected_team1, selected_team2)
-                    if 'error' in prediction:
-                        error_message = prediction['error']
-                except Exception as e:
-                    error_message = f"Prediction failed: {str(e)}"
-    
-    return render_template(
-        'index.html',
-        teams_by_group=teams_by_group,
-        selected_team1=selected_team1,
-        selected_team2=selected_team2,
-        prediction=prediction,
-        error_message=error_message,
-        last_updated=datetime.now() if teams_with_stats else None
-    )
+        # Get teams with stats
+        teams_with_stats = current_app.db.get_all_teams_with_stats()
+        
+        if not teams_with_stats or len(teams_with_stats) < 10:
+            return render_template('index.html',
+                                teams_with_stats=[],
+                                prediction_result=None,
+                                error_message="No VCT data available. Please use the Update button to fetch current tournament data.",
+                                last_updated=None)
+        
+        # Handle form submission for prediction
+        prediction_result = None
+        if request.method == 'POST':
+            try:
+                team1_id = request.form.get('team1')
+                team2_id = request.form.get('team2')
+                
+                if team1_id and team2_id and team1_id != team2_id:
+                    prediction_result = current_app.predictor.predict_match(team1_id, team2_id)
+                else:
+                    prediction_result = {'error': 'Please select two different teams'}
+            except Exception as e:
+                prediction_result = {'error': f'Prediction failed: {str(e)}'}
+        
+        # Get last updated time
+        last_updated = None
+        if teams_with_stats:
+            try:
+                # Try to get the most recent update time from the database
+                last_updated = current_app.db.get_last_update_time()
+            except:
+                last_updated = datetime.now()
+        
+        return render_template('index.html',
+                            teams_with_stats=teams_with_stats,
+                            prediction_result=prediction_result,
+                            error_message=None,
+                            last_updated=last_updated)
+                            
+    except Exception as e:
+        return render_template('index.html',
+                            teams_with_stats=[],
+                            prediction_result=None,
+                            error_message=f"An error occurred: {str(e)}",
+                            last_updated=None)

@@ -29,32 +29,6 @@ class VCTScraper:
         
         logger.info("🚀 VCT Scraper initialized")
     
-    def create_sample_data(self):
-        """Create sample VCT 2025 Stage 2 Americas data for testing when scraping fails"""
-        logger.info("📝 Creating sample VCT 2025 Stage 2 Americas data...")
-        
-        # Updated teams for VCT 2025 Stage 2 Americas based on current tournament
-        sample_teams = [
-            # Group Alpha - 2025 Stage 2 (Current teams)
-            {'group_name': 'Alpha', 'team': 'Sentinels', 'record': '4-1', 'map_diff': '8/2', 'round_diff': '104/78', 'delta': 26.0},
-            {'group_name': 'Alpha', 'team': 'LOUD', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '98/82', 'delta': 16.0},
-            {'group_name': 'Alpha', 'team': '100 Thieves', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '92/88', 'delta': 4.0},
-            {'group_name': 'Alpha', 'team': 'NRG', 'record': '2-3', 'map_diff': '4/6', 'round_diff': '86/94', 'delta': -8.0},
-            {'group_name': 'Alpha', 'team': 'Cloud9', 'record': '2-3', 'map_diff': '4/6', 'round_diff': '84/96', 'delta': -12.0},
-            {'group_name': 'Alpha', 'team': 'MIBR', 'record': '1-4', 'map_diff': '2/8', 'round_diff': '76/104', 'delta': -28.0},
-            
-            # Group Omega - 2025 Stage 2 (Current teams)
-            {'group_name': 'Omega', 'team': 'Leviatán', 'record': '4-1', 'map_diff': '8/2', 'round_diff': '102/76', 'delta': 26.0},
-            {'group_name': 'Omega', 'team': 'KRÜ', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '96/84', 'delta': 12.0},
-            {'group_name': 'Omega', 'team': 'FURIA', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '94/86', 'delta': 8.0},
-            {'group_name': 'Omega', 'team': 'Evil Geniuses', 'record': '2-3', 'map_diff': '4/6', 'round_diff': '88/92', 'delta': -4.0},
-            {'group_name': 'Omega', 'team': 'G2 Esports', 'record': '2-3', 'map_diff': '4/6', 'round_diff': '86/94', 'delta': -8.0},
-            {'group_name': 'Omega', 'team': 'Shopify Rebellion', 'record': '1-4', 'map_diff': '2/8', 'round_diff': '78/102', 'delta': -24.0}
-        ]
-        
-        logger.info("📊 Sample data created with 12 teams (6 Alpha, 6 Omega) for VCT 2025 Stage 2")
-        return sample_teams
-
     def clean_team_name(self, team_name):
         """Clean and standardize team names"""
         if not team_name:
@@ -97,13 +71,13 @@ class VCTScraper:
                 else:
                     logger.warning(f"⚠️ Only found {len(teams_data) if teams_data else 0} teams from {url}")
             
-            # Fallback to sample data if scraping fails
-            logger.warning("⚠️ Falling back to sample data")
-            return self.create_sample_data()
+            # No fallback to sample data - return None if scraping fails
+            logger.error("❌ Failed to scrape VCT data from all sources")
+            return None
             
         except Exception as e:
             logger.error(f"❌ Error scraping VCT standings: {e}")
-            return self.create_sample_data()
+            return None
 
     def scrape_single_vct_url(self, url):
         """Scrape a single VCT URL and return all teams from all groups"""
@@ -322,6 +296,19 @@ class VCTScraper:
                 alpha_count = len([t for t in teams_data if t['group_name'] == 'Alpha'])
                 omega_count = len([t for t in teams_data if t['group_name'] == 'Omega'])
                 logger.info(f"📊 Group distribution: Alpha={alpha_count}, Omega={omega_count}")
+                
+                # Update database with new data
+                try:
+                    if hasattr(self, 'db') and self.db:
+                        success = self.update_database(teams_data)
+                        if success:
+                            logger.info("✅ Database updated successfully with new VCT data")
+                        else:
+                            logger.warning("⚠️ Database update failed")
+                    else:
+                        logger.info("ℹ️ No database connection, skipping database update")
+                except Exception as e:
+                    logger.error(f"❌ Database update error: {e}")
                 
                 return True
             else:

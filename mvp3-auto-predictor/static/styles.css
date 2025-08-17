@@ -490,3 +490,351 @@ select:focus {
         align-items: flex-start;
     }
 }
+
+/* Header and Update Section */
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    font-size: 2.5rem;
+}
+
+.header p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.update-section {
+    margin: 1rem 0;
+}
+
+.update-btn {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.update-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+    background: linear-gradient(135deg, #2980b9, #1f5f8b);
+}
+
+.update-btn:active {
+    transform: translateY(0);
+}
+
+.update-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.update-status {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    min-height: 1.2rem;
+}
+
+.update-status.success {
+    color: #27ae60;
+}
+
+.update-status.error {
+    color: #e74c3c;
+}
+
+.update-status.info {
+    color: #3498db;
+}
+
+/* Standings Section */
+.standings-section {
+    margin: 2rem 0;
+}
+
+.standings-section h2 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+.group-section {
+    margin-bottom: 2rem;
+}
+
+.group-section h3 {
+    color: #34495e;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+    text-align: center;
+}
+
+.standings-table {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+}
+
+.team-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid #ecf0f1;
+    align-items: center;
+    text-align: center;
+}
+
+.team-row:last-child {
+    border-bottom: none;
+}
+
+.team-row:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.team-name {
+    font-weight: 600;
+    color: #2c3e50;
+    text-align: left;
+}
+
+.record, .map-diff, .round-diff {
+    color: #7f8c8d;
+}
+
+.delta {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.delta.positive {
+    color: #27ae60;
+}
+
+.delta.negative {
+    color: #e74c3c;
+}
+
+/* Prediction Section */
+.prediction-section {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.prediction-section h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+.prediction-form {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.team-selection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.team-selector {
+    text-align: left;
+}
+
+.team-selector label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.team-selector select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #ecf0f1;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    transition: border-color 0.3s ease;
+}
+
+.team-selector select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.predict-btn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.predict-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.prediction-result {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-radius: 10px;
+    background: #f8f9fa;
+    border-left: 4px solid #3498db;
+}
+
+.prediction-result.error {
+    background: #fdf2f2;
+    border-left-color: #e74c3c;
+}
+
+.prediction-result h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.prediction-result p {
+    margin: 0.5rem 0;
+    color: #34495e;
+}
+
+/* No Data Section */
+.no-data-section {
+    text-align: center;
+    margin: 3rem 0;
+    padding: 3rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 15px;
+    border: 2px dashed #dee2e6;
+}
+
+.no-data-content h2 {
+    color: #6c757d;
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+.no-data-content p {
+    color: #6c757d;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.data-info {
+    text-align: left;
+    max-width: 500px;
+    margin: 2rem auto 0;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.data-info p {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.data-info ul {
+    color: #6c757d;
+    line-height: 1.6;
+}
+
+.data-info li {
+    margin-bottom: 0.5rem;
+}
+
+/* Error Message */
+.error-message {
+    background: #fdf2f2;
+    color: #e74c3c;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #e74c3c;
+    margin: 1rem 0;
+    text-align: center;
+}
+
+/* Last Updated */
+.last-updated {
+    text-align: center;
+    margin: 1rem 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .team-selection {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .table-header,
+    .team-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .team-name {
+        text-align: center;
+    }
+    
+    .standings-table {
+        font-size: 0.9rem;
+    }
+}

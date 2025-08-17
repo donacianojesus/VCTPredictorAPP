@@ -14,6 +14,60 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(loadScraperHealth, 30000);
 });
 
+// Update Data Button Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const updateBtn = document.getElementById('updateDataBtn');
+    const updateStatus = document.getElementById('updateStatus');
+    
+    if (updateBtn) {
+        updateBtn.addEventListener('click', function() {
+            updateVCTData();
+        });
+    }
+    
+    function updateVCTData() {
+        // Disable button and show loading
+        updateBtn.disabled = true;
+        updateBtn.querySelector('.btn-text').style.display = 'none';
+        updateBtn.querySelector('.loading-spinner').style.display = 'inline-block';
+        updateStatus.textContent = 'Updating VCT data...';
+        updateStatus.className = 'update-status info';
+        
+        // Make API call to update data
+        fetch('/api/run-scraper', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateStatus.textContent = `✅ Data updated successfully! Found ${data.teams_count} teams`;
+                updateStatus.className = 'update-status success';
+                
+                // Refresh the page to show new data
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                updateStatus.textContent = `❌ Update failed: ${data.error || 'Unknown error'}`;
+                updateStatus.className = 'update-status error';
+            }
+        })
+        .catch(error => {
+            updateStatus.textContent = `❌ Update failed: ${error.message}`;
+            updateStatus.className = 'update-status error';
+        })
+        .finally(() => {
+            // Re-enable button and hide loading
+            updateBtn.disabled = false;
+            updateBtn.querySelector('.btn-text').style.display = 'inline';
+            updateBtn.querySelector('.loading-spinner').style.display = 'none';
+        });
+    }
+});
+
 // Get team group information from the page
 const teamGroups = {};
 

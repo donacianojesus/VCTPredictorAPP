@@ -35,21 +35,35 @@ def create_app(config_class=None):
     try:
         db = MatchDatabase(database_url)
         predictor = DynamicPredictor(database_url)
-        
-        # Store instances in app context
         app.db = db
         app.predictor = predictor
-        
         print(f"✅ Database and predictor initialized successfully")
+        
+        # Check if we have VCT data, if not, run initial scrape
+        try:
+            teams = db.get_all_teams_with_stats()
+            if not teams or len(teams) < 10:
+                print("⚠️ No VCT data found in database, running initial scrape...")
+                from app.services.scraper import VCTScraper
+                scraper = VCTScraper()
+                scraper.db = db  # Connect scraper to database
+                success = scraper.run_scrape()
+                if success:
+                    print("✅ Initial VCT data scrape completed successfully")
+                else:
+                    print("❌ Initial VCT data scrape failed")
+            else:
+                print(f"✅ Found {len(teams)} teams in database")
+        except Exception as e:
+            print(f"⚠️ Could not check initial data: {e}")
         
         # Start background scraper if in production
         if os.environ.get('FLASK_ENV') == 'production':
             start_background_scraper(app)
-        
+            
     except Exception as e:
         print(f"⚠️ Warning: Could not initialize database/predictor: {e}")
         print("App will start but database features may not work")
-        # Set to None so routes can handle gracefully
         app.db = None
         app.predictor = None
     

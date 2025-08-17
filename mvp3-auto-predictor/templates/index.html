@@ -8,157 +8,155 @@
 </head>
 <body>
     <div class="container">
-        <h1>
-            <img src="{{ url_for('static', filename='VCT_2023_Americas.png') }}" alt="VCT Americas Logo" class="logo-image">
-            VCT Americas: Stage 2 Group Stage Match Predictor
-        </h1>
-        <p class="description-text">
-            This "Predictor" Tool allows a simple prediction of the winner of a match between two VCT Americas teams during Stage 2 Group Stage.
-        </p>
+        <div class="header">
+            <h1>VCT Predictor</h1>
+            <p>Predict match outcomes based on current VCT 2025 Stage 2 Americas standings</p>
+            <div class="update-section">
+                <button id="updateDataBtn" class="update-btn">
+                    <span class="btn-text">🔄 Update VCT Data</span>
+                    <span class="loading-spinner" style="display: none;">⏳</span>
+                </button>
+                <div id="updateStatus" class="update-status"></div>
+            </div>
+        </div>
         
         <!-- Group Standings -->
-        <div class="group-standings">
-            <h2 class="standings-title">Current Stage 2 Group Standings</h2>
-            
-            {% for group, teams in teams_by_group.items() %}
-            <div class="group-section">
-                <h3 class="group-title">Group {{ group }}</h3>
-                <div class="group-teams">
-                    {% for team in teams %}
-                    <div class="team-row">
-                        <div class="team-info">
-                            <span class="team-name-standings">{{ team.name }}</span>
-                            <span class="team-record-standings">REC: {{ team.record }}</span>
-                            <span class="team-record-standings">MAP: {{ team.map_diff }}</span>
-                            <span class="team-record-standings">RND: {{ team.round_diff }}</span>
-                            <span class="team-record-standings {% if team.delta > 0 %}delta-positive{% elif team.delta < 0 %}delta-negative{% else %}delta-zero{% endif %}">Δ: {{ team.delta }}</span>
+        {% if teams_with_stats and teams_with_stats|length >= 10 %}
+            <div class="standings-section">
+                <h2>Current VCT 2025 Stage 2 Americas Standings</h2>
+                
+                <!-- Group Alpha -->
+                <div class="group-section">
+                    <h3>Group Alpha</h3>
+                    <div class="standings-table">
+                        <div class="table-header">
+                            <span class="team-name">Team</span>
+                            <span class="record">Record</span>
+                            <span class="map-diff">Map Diff</span>
+                            <span class="round-diff">Round Diff</span>
+                            <span class="delta">Δ</span>
+                        </div>
+                        {% for team in teams_with_stats if team.group_name == 'Alpha' %}
+                        <div class="team-row">
+                            <span class="team-name">{{ team.team }}</span>
+                            <span class="record">{{ team.record }}</span>
+                            <span class="map-diff">{{ team.map_diff }}</span>
+                            <span class="round-diff">{{ team.round_diff }}</span>
+                            <span class="delta {% if team.delta > 0 %}positive{% elif team.delta < 0 %}negative{% endif %}">
+                                {{ team.delta }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Group Omega -->
+                <div class="group-section">
+                    <h3>Group Omega</h3>
+                    <div class="standings-table">
+                        <div class="table-header">
+                            <span class="team-name">Team</span>
+                            <span class="record">Record</span>
+                            <span class="map-diff">Map Diff</span>
+                            <span class="round-diff">Round Diff</span>
+                            <span class="delta">Δ</span>
+                        </div>
+                        {% for team in teams_with_stats if team.group_name == 'Omega' %}
+                        <div class="team-row">
+                            <span class="team-name">{{ team.team }}</span>
+                            <span class="record">{{ team.record }}</span>
+                            <span class="map-diff">{{ team.map_diff }}</span>
+                            <span class="round-diff">{{ team.round_diff }}</span>
+                            <span class="delta {% if team.delta > 0 %}positive{% elif team.delta < 0 %}negative{% endif %}">
+                                {{ team.delta }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if last_updated %}
+                <div class="last-updated">
+                    <p>Last updated: {{ last_updated.strftime('%Y-%m-%d %H:%M:%S') if last_updated else 'Unknown' }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Match Prediction Form -->
+            <div class="prediction-section">
+                <h2>Match Prediction</h2>
+                <form method="POST" class="prediction-form">
+                    <div class="team-selection">
+                        <div class="team-selector">
+                            <label for="team1">Team 1:</label>
+                            <select name="team1" id="team1" required>
+                                <option value="">Select Team 1</option>
+                                {% for team in teams_with_stats %}
+                                <option value="{{ team.id }}" {% if request.form.get('team1') == team.id|string %}selected{% endif %}>
+                                    {{ team.team }} ({{ team.group_name }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="team-selector">
+                            <label for="team2">Team 2:</label>
+                            <select name="team2" id="team2" required>
+                                <option value="">Select Team 2</option>
+                                {% for team in teams_with_stats %}
+                                <option value="{{ team.id }}" {% if request.form.get('team2') == team.id|string %}selected{% endif %}>
+                                    {{ team.team }} ({{ team.group_name }})
+                                </option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
-                    {% endfor %}
+                    
+                    <button type="submit" class="predict-btn">Predict Winner</button>
+                </form>
+
+                {% if prediction_result %}
+                    {% if prediction_result.error %}
+                        <div class="prediction-result error">
+                            <p>{{ prediction_result.error }}</p>
+                        </div>
+                    {% else %}
+                        <div class="prediction-result">
+                            <h3>Prediction Result</h3>
+                            <p><strong>Winner:</strong> {{ prediction_result.winner }}</p>
+                            <p><strong>Confidence:</strong> {{ prediction_result.confidence }}%</p>
+                            {% if prediction_result.reasoning %}
+                            <p><strong>Reasoning:</strong> {{ prediction_result.reasoning }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- No Data Available -->
+            <div class="no-data-section">
+                <div class="no-data-content">
+                    <h2>📊 No VCT Data Available</h2>
+                    <p>There's no current tournament data in the database.</p>
+                    <p>Click the <strong>"Update VCT Data"</strong> button above to fetch the latest VCT 2025 Stage 2 Americas standings.</p>
+                    <div class="data-info">
+                        <p><strong>What this will do:</strong></p>
+                        <ul>
+                            <li>Scrape current VCT 2025 Stage 2 Americas data from VLR.gg</li>
+                            <li>Update the database with live tournament standings</li>
+                            <li>Enable match predictions between teams</li>
+                            <li>Show real-time group standings (Alpha & Omega)</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        
-        <!-- Prediction Form -->
-        <form method="POST" id="predictionForm" novalidate>
-            <div class="form-group">
-                <label for="team1" id="team1Label">Team 1:</label>
-                <select name="team1" id="team1" required aria-labelledby="team1Label" aria-describedby="team1Help">
-                    <option value="">-- Select Team 1 --</option>
-                    <optgroup label="Group Alpha">
-                        {% for team in teams_by_group.Alpha %}
-                            <option value="{{ team.name }}" {% if team.name == selected_team1 %}selected{% endif %}>
-                                {{ team.name }} ({{ team.record }})
-                            </option>
-                        {% endfor %}
-                    </optgroup>
-                    <optgroup label="Group Omega">
-                        {% for team in teams_by_group.Omega %}
-                            <option value="{{ team.name }}" {% if team.name == selected_team1 %}selected{% endif %}>
-                                {{ team.name }} ({{ team.record }})
-                            </option>
-                        {% endfor %}
-                    </optgroup>
-                </select>
-                <div id="team1Help" class="help-text help-text-inline">
-                    Please select a team
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="team2" id="team2Label">Team 2:</label>
-                <select name="team2" id="team2" required aria-labelledby="team2Label" aria-describedby="team2Help">
-                    <option value="">-- Select Team 2 --</option>
-                    <optgroup label="Group Alpha">
-                        {% for team in teams_by_group.Alpha %}
-                            <option value="{{ team.name }}" {% if team.name == selected_team2 %}selected{% endif %}>
-                                {{ team.name }} ({{ team.record }})
-                            </option>
-                        {% endfor %}
-                    </optgroup>
-                    <optgroup label="Group Omega">
-                        {% for team in teams_by_group.Omega %}
-                            <option value="{{ team.name }}" {% if team.name == selected_team2 %}selected{% endif %}>
-                                {{ team.name }} ({{ team.record }})
-                            </option>
-                        {% endfor %}
-                    </optgroup>
-                </select>
-                <div id="team2Help" class="help-text help-text-inline">
-                    Please select a team from the same group
-                </div>
-            </div>
-            
-            <button type="submit" class="predict-button" id="predictButton" disabled>
-                 Predict Match Winner
-            </button>
-        </form>
-        
-        <div class="note-text">
-            <p>📋 <strong>Note:</strong> Teams can only play against other teams in their own group during the group stage.</p>
-        </div>
-        
-        <!-- Error Display -->
+        {% endif %}
+
         {% if error_message %}
-            <div class="error">
-                ⚠️ {{ error_message }}
-            </div>
-        {% endif %}
-        
-        <!-- Prediction Results -->
-        {% if prediction %}
-            <div class="prediction-result" role="region" aria-label="Match prediction results">
-                <h2 class="prediction-title">
-                    Match Prediction Results
-                </h2>
-                
-                <div class="team-stats">
-                    <div class="team-stat">
-                        <div class="team-name">{{ prediction.team1|upper }}</div>
-                        <div class="win-rate">
-                            Win Rate: {{ "%.1f"|format(prediction.team1_win_rate * 100) }}%
-                        </div>
-                        <div class="records">
-                            ({{ prediction.team1_record.wins }}W - {{ prediction.team1_record.losses }}L)
-                        </div>
-                        <div class="match-probability">
-                            {{ "%.0f"|format(prediction.team1_match_probability * 100) }}% chance
-                        </div>
-                    </div>
-                    
-                    <div class="vs" aria-hidden="true">VS</div>
-                    
-                    <div class="team-stat">
-                        <div class="team-name">{{ prediction.team2|upper }}</div>
-                        <div class="win-rate">
-                            Win Rate: {{ "%.1f"|format(prediction.team2_win_rate * 100) }}%
-                        </div>
-                        <div class="records">
-                            ({{ prediction.team2_record.wins }}W - {{ prediction.team2_record.losses }}L)
-                        </div>
-                        <div class="match-probability">
-                            {{ "%.0f"|format(prediction.team2_match_probability * 100) }}% chance
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="winner" role="alert">
-                     Predicted Winner: {{ prediction.predicted_winner|upper }}
-                    <br>
-                    <span class="confidence-text">
-                        ({{ "%.0f"|format(prediction.confidence * 100) }}% confidence)
-                    </span>
-                </div>
-            </div>
-        {% endif %}
-        
-        <!-- Last Updated Info -->
-        <div class="last-updated">
-            {% if last_updated %}
-                Last updated: {{ last_updated.strftime('%Y-%m-%d %H:%M UTC') }}
-            {% endif %}
+        <div class="error-message">
+            <p>{{ error_message }}</p>
         </div>
+        {% endif %}
         
         <!-- Scraper Health Status -->
         <div class="health-status">
@@ -185,7 +183,7 @@
         </div>
         
         <!-- Instructions for first-time users -->
-        {% if not prediction and not error_message %}
+        {% if not prediction_result and not error_message %}
             <div class="instructions-box">
                 <h3 class="instructions-title">How it works:</h3>
                 <ol class="instructions-list">
