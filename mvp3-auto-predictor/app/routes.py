@@ -315,6 +315,127 @@ def debug_scraper():
             'error': str(e)
         }), 500
 
+@main_bp.route('/api/test-scraper-detailed')
+def test_scraper_detailed():
+    """Detailed scraper test endpoint that shows all the debugging information"""
+    try:
+        # Check if database is available
+        db_available, message = check_db_available()
+        if not db_available:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 503
+        
+        # Check if scraper is available
+        if not hasattr(current_app, 'scraper_service'):
+            from app.services.scraper import VCTScraper
+            current_app.scraper_service = VCTScraper()
+        
+        # Get the main VCT 2025 URL
+        vct_url = "https://www.vlr.gg/event/2501/vct-2025-americas-stage-2"
+        
+        # Do detailed page analysis
+        analysis_results = {}
+        
+        try:
+            # Analyze page structure
+            soup = current_app.scraper_service.analyze_vct_page_structure(vct_url)
+            if soup:
+                # Extract specific information
+                page_text = soup.get_text()
+                
+                # Count group mentions
+                analysis_results['alpha_count'] = page_text.lower().count('alpha')
+                analysis_results['omega_count'] = page_text.lower().count('omega')
+                analysis_results['group_a_count'] = page_text.lower().count('group a')
+                analysis_results['group_b_count'] = page_text.lower().count('group b')
+                
+                # Count tables
+                all_tables = soup.find_all('table')
+                analysis_results['total_tables'] = len(all_tables)
+                
+                # Look for team names
+                team_indicators = ['sentinels', 'loud', '100 thieves', 'nrg', 'cloud9', 'mibr', 'leviatán', 'krü', 'furia', 'evil geniuses', 'g2 esports', 'shopify rebellion']
+                found_teams = []
+                for team in team_indicators:
+                    if team.lower() in page_text.lower():
+                        found_teams.append(team)
+                analysis_results['found_teams'] = found_teams
+                
+                # Look for standings table
+                standings_table = (
+                    soup.find('table', class_='wf-table') or
+                    soup.find('table', class_='standings-table') or
+                    soup.find('table', class_='event-standings-table') or
+                    soup.find('table')
+                )
+                
+                if standings_table:
+                    rows = standings_table.find_all('tr')
+                    analysis_results['standings_table_rows'] = len(rows)
+                    analysis_results['standings_table_found'] = True
+                    
+                    # Show first few rows structure
+                    if len(rows) > 1:
+                        first_row = rows[0]
+                        cells = first_row.find_all(['th', 'td'])
+                        headers = [cell.get_text(strip=True) for cell in cells]
+                        analysis_results['table_headers'] = headers
+                        
+                        # Show sample data from first few rows
+                        sample_rows = []
+                        for i in range(min(3, len(rows))):
+                            row_cells = rows[i].find_all('td')
+                            row_text = [cell.get_text(strip=True) for cell in row_cells]
+                            sample_rows.append(row_text)
+                        analysis_results['sample_rows'] = sample_rows
+                else:
+                    analysis_results['standings_table_found'] = False
+                
+                analysis_results['analysis_success'] = True
+            else:
+                analysis_results['analysis_success'] = False
+                analysis_results['error'] = 'Failed to analyze page structure'
+                
+        except Exception as e:
+            analysis_results['analysis_success'] = False
+            analysis_results['error'] = str(e)
+        
+        # Try to run the scraper
+        try:
+            teams_data = current_app.scraper_service.scrape_vct_standings()
+            if teams_data:
+                analysis_results['scrape_success'] = True
+                analysis_results['teams_count'] = len(teams_data)
+                
+                # Group distribution
+                alpha_teams = [t for t in teams_data if t['group_name'] == 'Alpha']
+                omega_teams = [t for t in teams_data if t['group_name'] == 'Omega']
+                analysis_results['alpha_count'] = len(alpha_teams)
+                analysis_results['omega_count'] = len(omega_teams)
+                analysis_results['teams_data'] = teams_data
+            else:
+                analysis_results['scrape_success'] = False
+                analysis_results['teams_count'] = 0
+                
+        except Exception as e:
+            analysis_results['scrape_success'] = False
+            analysis_results['scrape_error'] = str(e)
+        
+        return jsonify({
+            'success': True,
+            'url_tested': vct_url,
+            'analysis_results': analysis_results,
+            'message': 'Detailed scraper analysis completed'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @main_bp.route('/', methods=['GET', 'POST'])
 def index():
     """Main page with team selection and predictions"""
