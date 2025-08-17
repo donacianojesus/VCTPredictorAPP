@@ -29,137 +29,6 @@ class VCTScraper:
         
         logger.info("🚀 VCT Scraper initialized")
     
-    def clean_team_name(self, team_name):
-        """Clean team name by removing country suffixes"""
-        # Remove common country suffixes
-        suffixes = [
-            'United States', 'Brazil', 'Canada', 'Mexico', 'Argentina',
-            'Chile', 'Colombia', 'Peru', 'Uruguay', 'Paraguay',
-            'Venezuela', 'Ecuador', 'Bolivia', 'Guyana', 'Suriname'
-        ]
-        
-        for suffix in suffixes:
-            if suffix in team_name:
-                team_name = team_name.replace(suffix, '').strip()
-                break
-        
-        return team_name
-    
-    def scrape_vct_standings(self):
-        """Scrape VCT 2025 Stage 2 Americas standings from vlr.gg"""
-        try:
-            logger.info("🌐 Starting VCT 2025 Stage 2 Americas standings scrape...")
-            
-            # Use the correct VCT 2025 URLs discovered by the debug endpoint
-            vct_urls = [
-                "https://www.vlr.gg/event/2501/vct-2025-americas-stage-2",  # Stage 2 - Main tournament
-                "https://www.vlr.gg/event/2347/vct-2025-americas-stage-1",  # Stage 1 - Fallback
-            ]
-            
-            teams_data = []
-            
-            for url in vct_urls:
-                try:
-                    logger.info(f"🔍 Trying URL: {url}")
-                    response = self.scraper.get(url, timeout=30)
-                    response.raise_for_status()
-                    
-                    # Use html.parser instead of lxml to avoid build issues
-                    soup = BeautifulSoup(response.content, 'html.parser')
-                    
-                    # Try different table selectors for VCT standings
-                    standings_table = (
-                        soup.find('table', class_='wf-table') or
-                        soup.find('table', class_='standings-table') or
-                        soup.find('table', class_='event-standings-table') or
-                        soup.find('table')
-                    )
-                    
-                    if standings_table:
-                        logger.info(f"✅ Found standings table at {url}")
-                        
-                        # Count total rows to understand the data size
-                        rows = standings_table.find_all('tr')
-                        logger.info(f"📊 Table has {len(rows)} total rows")
-                        
-                        # Look for group indicators first
-                        group_indicators = self.find_group_indicators(standings_table)
-                        logger.info(f"🏷️ Group indicators found: {group_indicators}")
-                        
-                        # Parse the table
-                        teams_data = self.parse_standings_table(standings_table, url)
-                        if teams_data:
-                            logger.info(f"✅ Successfully extracted {len(teams_data)} teams from {url}")
-                            
-                            # Log group distribution
-                            alpha_count = len([t for t in teams_data if t['group_name'] == 'Alpha'])
-                            omega_count = len([t for t in teams_data if t['group_name'] == 'Omega'])
-                            logger.info(f"📊 Group distribution: Alpha={alpha_count}, Omega={omega_count}")
-                            
-                            break
-                    else:
-                        logger.warning(f"⚠️ No standings table found at {url}")
-                        
-                except Exception as e:
-                    logger.warning(f"⚠️ Failed to scrape {url}: {e}")
-                    continue
-            
-            if not teams_data:
-                # If no VCT data found, create sample data for testing
-                logger.warning("⚠️ No VCT data found, creating sample data for testing")
-                teams_data = self.create_sample_data()
-            
-            logger.info(f"📊 Successfully scraped {len(teams_data)} teams")
-            return teams_data
-            
-        except Exception as e:
-            logger.error(f"❌ Scraping failed: {e}")
-            return False
-    
-    def find_vct_2025_urls(self):
-        """Search for working VCT 2025 URLs on vlr.gg"""
-        try:
-            logger.info("🔍 Searching for VCT 2025 URLs...")
-            
-            # Search for VCT 2025 events
-            search_urls = [
-                "https://www.vlr.gg/events",
-                "https://www.vlr.gg/events/americas",
-                "https://www.vlr.gg/events/2025"
-            ]
-            
-            working_urls = []
-            
-            for search_url in search_urls:
-                try:
-                    response = self.scraper.get(search_url, timeout=20)
-                    if response.status_code == 200:
-                        soup = BeautifulSoup(response.content, 'html.parser')
-                        
-                        # Look for VCT 2025 event links
-                        event_links = soup.find_all('a', href=True)
-                        
-                        for link in event_links:
-                            href = link.get('href', '')
-                            if '2025' in href and 'americas' in href and 'stage' in href:
-                                full_url = f"https://www.vlr.gg{href}"
-                                if full_url not in working_urls:
-                                    working_urls.append(full_url)
-                                    logger.info(f"✅ Found VCT 2025 URL: {full_url}")
-                        
-                        if working_urls:
-                            break
-                            
-                except Exception as e:
-                    logger.warning(f"⚠️ Failed to search {search_url}: {e}")
-                    continue
-            
-            return working_urls
-            
-        except Exception as e:
-            logger.error(f"❌ URL search failed: {e}")
-            return []
-    
     def create_sample_data(self):
         """Create sample VCT 2025 Stage 2 Americas data for testing when scraping fails"""
         logger.info("📝 Creating sample VCT 2025 Stage 2 Americas data...")
@@ -185,185 +54,219 @@ class VCTScraper:
         
         logger.info("📊 Sample data created with 12 teams (6 Alpha, 6 Omega) for VCT 2025 Stage 2")
         return sample_teams
-    
-    def parse_standings_table(self, standings_table, url):
-        """Parse the standings table to extract team data"""
+
+    def clean_team_name(self, team_name):
+        """Clean and standardize team names"""
+        if not team_name:
+            return "Unknown Team"
+        
+        # Remove common suffixes and clean up
+        team_name = team_name.strip()
+        team_name = team_name.replace('United States', '').replace('Spoiler hidden', '').strip()
+        
+        # Standardize common team names
+        name_mapping = {
+            '2game': '2Game Esports',
+            '2game esports': '2Game Esports',
+            'furia': 'FURIA',
+            'kru': 'KRÜ',
+            'kru esports': 'KRÜ',
+            'leviatan': 'Leviatán',
+            'leviatan esports': 'Leviatán',
+            'shopify': 'Shopify Rebellion',
+            'shopify rebellion esports': 'Shopify Rebellion'
+        }
+        
+        return name_mapping.get(team_name.lower(), team_name)
+
+    def scrape_vct_standings(self):
+        """Scrape VCT standings from multiple sources"""
         try:
-            teams_data = []
-            rows = standings_table.find_all('tr')[1:]  # Skip header row
+            # Try VCT 2025 URLs first
+            vct_urls = [
+                "https://www.vlr.gg/event/2501/vct-2025-americas-stage-2",
+                "https://www.vlr.gg/event/2347/vct-2025-americas-stage-1"
+            ]
             
-            # First, let's try to understand the table structure
-            if rows:
-                first_row = rows[0]
-                cells = first_row.find_all('td')
-                logger.info(f"🔍 Table structure: {len(cells)} columns")
-                
-                # Look for group indicators in the table
-                group_indicators = self.find_group_indicators(standings_table)
-                logger.info(f"🏷️ Group indicators found: {group_indicators}")
+            for url in vct_urls:
+                logger.info(f"🔍 Trying VCT URL: {url}")
+                teams_data = self.scrape_single_vct_url(url)
+                if teams_data and len(teams_data) >= 10:  # Expect at least 10 teams
+                    logger.info(f"✅ Successfully scraped {len(teams_data)} teams from {url}")
+                    return teams_data
+                else:
+                    logger.warning(f"⚠️ Only found {len(teams_data) if teams_data else 0} teams from {url}")
             
-            for i, row in enumerate(rows):
-                try:
-                    cells = row.find_all('td')
-                    if len(cells) < 4:  # Reduced minimum cells requirement
-                        continue
-                    
-                    # Extract team data - try multiple selectors
-                    team_element = (
-                        cells[1].find('div', class_='team-name') or
-                        cells[1].find('div', class_='event-group-team-name') or
-                        cells[1].find('span', class_='team-name') or
-                        cells[1].find('a', class_='team-name') or
-                        cells[0].find('div', class_='team-name') or  # Try first cell
-                        cells[0].find('div', class_='event-group-team-name') or
-                        cells[0].find('span', class_='team-name') or
-                        cells[0].find('a', class_='team-name')
-                    )
-                    
-                    if not team_element:
-                        continue
-                    
-                    team_name = team_element.get_text(strip=True)
-                    team_name = self.clean_team_name(team_name)
-                    
-                    # Try to find record in different positions
-                    record_cell = None
-                    for j in range(min(len(cells), 6)):
-                        cell_text = cells[j].get_text(strip=True)
-                        if '-' in cell_text or '–' in cell_text:
-                            record_cell = cell_text
-                            break
-                    
-                    if not record_cell:
-                        continue
-                    
-                    # Try to find map differential
-                    map_diff_cell = None
-                    for j in range(min(len(cells), 6)):
-                        cell_text = cells[j].get_text(strip=True)
-                        if '/' in cell_text or '-' in cell_text:
-                            if cell_text != record_cell:  # Don't use the same cell as record
-                                map_diff_cell = cell_text
-                                break
-                    
-                    if not map_diff_cell:
-                        map_diff_cell = "0/0"  # Default value
-                    
-                    # Try to find round differential
-                    round_diff_cell = None
-                    for j in range(min(len(cells), 6)):
-                        cell_text = cells[j].get_text(strip=True)
-                        if '/' in cell_text or '-' in cell_text:
-                            if cell_text != record_cell and cell_text != map_diff_cell:
-                                round_diff_cell = cell_text
-                                break
-                    
-                    if not round_diff_cell:
-                        round_diff_cell = "0/0"  # Default value
-                    
-                    # Extract delta (round differential converted to number)
-                    try:
-                        if '/' in round_diff_cell:
-                            wins, losses = map(int, round_diff_cell.split('/'))
-                            delta = wins - losses
-                        elif '-' in round_diff_cell:
-                            wins, losses = map(int, round_diff_cell.split('-'))
-                            delta = wins - losses
-                        else:
-                            delta = 0.0
-                    except:
-                        delta = 0.0
-                    
-                    # Determine group - use better logic
-                    group_name = self.determine_group_better(i, len(teams_data), cells, group_indicators)
-                    
-                    teams_data.append({
-                        'group_name': group_name,
-                        'team': team_name,
-                        'record': record_cell,
-                        'map_diff': map_diff_cell,
-                        'round_diff': round_diff_cell,
-                        'delta': delta
-                    })
-                    
-                    logger.info(f"✅ Scraped: {team_name} ({group_name}) - {record_cell}")
-                    
-                except Exception as e:
-                    logger.warning(f"⚠️ Failed to parse team row {i}: {e}")
-                    continue
-            
-            return teams_data
+            # Fallback to sample data if scraping fails
+            logger.warning("⚠️ Falling back to sample data")
+            return self.create_sample_data()
             
         except Exception as e:
-            logger.error(f"❌ Failed to parse standings table: {e}")
-            return []
+            logger.error(f"❌ Error scraping VCT standings: {e}")
+            return self.create_sample_data()
+
+    def scrape_single_vct_url(self, url):
+        """Scrape a single VCT URL and return all teams from all groups"""
+        try:
+            response = self.scraper.get(url)
+            if response.status_code != 200:
+                logger.warning(f"⚠️ Failed to fetch {url}: {response.status_code}")
+                return None
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            logger.info(f"📄 Successfully fetched {url}")
+            
+            # Find ALL tables on the page
+            all_tables = soup.find_all('table')
+            logger.info(f"📊 Found {len(all_tables)} tables on the page")
+            
+            all_teams = []
+            
+            # Process each table to find group standings
+            for table_index, table in enumerate(all_tables):
+                logger.info(f"🔍 Processing table {table_index + 1}")
+                
+                # Check if this table has standings data
+                if self.is_standings_table(table):
+                    logger.info(f"✅ Table {table_index + 1} appears to be a standings table")
+                    
+                    # Try to determine group name from table context
+                    group_name = self.determine_group_from_table(table, table_index, soup)
+                    logger.info(f"🏷️ Determined group name: {group_name}")
+                    
+                    # Parse teams from this table
+                    table_teams = self.parse_standings_table(table, group_name)
+                    if table_teams:
+                        logger.info(f"📋 Found {len(table_teams)} teams in {group_name} group")
+                        all_teams.extend(table_teams)
+                    else:
+                        logger.warning(f"⚠️ No teams found in table {table_index + 1}")
+                else:
+                    logger.info(f"⏭️ Table {table_index + 1} is not a standings table, skipping")
+            
+            logger.info(f"🎯 Total teams found across all groups: {len(all_teams)}")
+            return all_teams
+            
+        except Exception as e:
+            logger.error(f"❌ Error scraping {url}: {e}")
+            return None
+
+    def is_standings_table(self, table):
+        """Check if a table contains standings data"""
+        try:
+            # Look for common standings indicators
+            text = table.get_text().lower()
+            standings_indicators = ['rec', 'map', 'rnd', 'δ', 'delta', 'wins', 'losses', 'points']
+            
+            # Check if table has multiple columns (likely standings)
+            rows = table.find_all('tr')
+            if len(rows) < 2:  # Need at least header + 1 data row
+                return False
+            
+            # Check if first row has headers
+            first_row = rows[0]
+            headers = first_row.find_all(['th', 'td'])
+            if len(headers) < 3:  # Need at least 3 columns for standings
+                return False
+            
+            # Check if headers contain standings indicators
+            header_text = ' '.join([h.get_text().lower() for h in headers])
+            has_standings_indicators = any(indicator in header_text for indicator in standings_indicators)
+            
+            return has_standings_indicators
+            
+        except Exception as e:
+            logger.error(f"❌ Error checking if table is standings: {e}")
+            return False
+
+    def determine_group_from_table(self, table, table_index, soup):
+        """Determine the group name for a standings table"""
+        try:
+            # Method 1: Look for group name in table headers
+            headers = table.find_all(['th', 'td'])
+            for header in headers:
+                header_text = header.get_text().lower()
+                if 'alpha' in header_text:
+                    return 'Alpha'
+                elif 'omega' in header_text:
+                    return 'Omega'
+                elif 'group a' in header_text:
+                    return 'Alpha'
+                elif 'group b' in header_text:
+                    return 'Omega'
+            
+            # Method 2: Look for group name above/below the table
+            # Check previous sibling elements
+            prev_element = table.find_previous_sibling()
+            if prev_element:
+                prev_text = prev_element.get_text().lower()
+                if 'alpha' in prev_text:
+                    return 'Alpha'
+                elif 'omega' in prev_text:
+                    return 'Omega'
+            
+            # Method 3: Look for group name in nearby headings
+            nearby_headings = table.find_previous_siblings(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+            for heading in nearby_headings:
+                heading_text = heading.get_text().lower()
+                if 'alpha' in heading_text:
+                    return 'Alpha'
+                elif 'omega' in heading_text:
+                    return 'Omega'
+            
+            # Method 4: Check if this is the first or second table
+            # First table is usually Alpha, second is usually Omega
+            if table_index == 0:
+                return 'Alpha'
+            elif table_index == 1:
+                return 'Omega'
+            else:
+                return f'Group {table_index + 1}'  # Fallback naming
+                
+        except Exception as e:
+            logger.error(f"❌ Error determining group name: {e}")
+            return f'Group {table_index + 1}'  # Fallback naming
     
     def find_group_indicators(self, table):
         """Find group indicators in the table"""
-        indicators = []
         try:
-            # Look for group headers or indicators
-            headers = table.find_all(['th', 'td'])
-            for header in headers:
-                text = header.get_text(strip=True).lower()
-                if 'alpha' in text or 'omega' in text or 'group a' in text or 'group b' in text:
-                    indicators.append(text)
+            indicators = []
+            text = table.get_text().lower()
             
-            # Also look for any text that might indicate groups
-            all_text = table.get_text().lower()
-            if 'alpha' in all_text:
+            if 'alpha' in text:
                 indicators.append('alpha')
-            if 'omega' in all_text:
+            if 'omega' in text:
                 indicators.append('omega')
-            if 'group a' in all_text:
-                indicators.append('group a')
-            if 'group b' in all_text:
-                indicators.append('group b')
-                
+            if 'group a' in text:
+                indicators.append('group_a')
+            if 'group b' in text:
+                indicators.append('group_b')
+            
+            return indicators
         except Exception as e:
-            logger.warning(f"⚠️ Error finding group indicators: {e}")
-        
-        return indicators
-    
-    def determine_group_better(self, row_index, teams_count, cells, group_indicators):
-        """Better group determination logic"""
+            logger.error(f"❌ Error finding group indicators: {e}")
+            return []
+
+    def determine_group_better(self, row_index, teams_found, cells, group_indicators):
+        """Better logic for determining group assignment"""
         try:
-            # First, try to find group info in the current row
-            for cell in cells:
-                cell_text = cell.get_text(strip=True).lower()
-                if 'alpha' in cell_text:
-                    return 'Alpha'
-                elif 'omega' in cell_text:
-                    return 'Omega'
-                elif 'group a' in cell_text:
-                    return 'Alpha'
-                elif 'group b' in cell_text:
-                    return 'Omega'
+            # If we have explicit group indicators, use them
+            if 'alpha' in group_indicators:
+                return 'Alpha'
+            elif 'omega' in group_indicators:
+                return 'Omega'
             
-            # If we have group indicators, use them to determine groups
-            if group_indicators:
-                if 'alpha' in group_indicators and 'omega' in group_indicators:
-                    # We have both groups, distribute teams evenly
-                    if teams_count < 6:
-                        return 'Alpha'
-                    else:
-                        return 'Omega'
-                elif 'alpha' in group_indicators:
-                    return 'Alpha'
-                elif 'omega' in group_indicators:
-                    return 'Omega'
-            
-            # Fallback: distribute teams evenly between Alpha and Omega
-            if teams_count < 6:
+            # If no explicit indicators, distribute evenly
+            # First 6 teams go to Alpha, next 6 to Omega
+            if teams_found < 6:
                 return 'Alpha'
             else:
                 return 'Omega'
                 
         except Exception as e:
-            logger.warning(f"⚠️ Error determining group: {e}")
-            # Final fallback
-            return 'Alpha' if teams_count < 6 else 'Omega'
-    
+            logger.error(f"❌ Error determining group: {e}")
+            return 'Alpha'  # Default fallback
+
     def update_database(self, teams_data):
         """Update database with scraped team data"""
         try:
@@ -407,171 +310,227 @@ class VCTScraper:
             return False
     
     def run_scrape(self):
-        """Main scraping method"""
-        start_time = time.time()
-        logger.info("🚀 Starting VCT data scrape...")
-        
+        """Run the scraper and return success status"""
         try:
-            # Scrape VLR.gg
+            logger.info("🚀 Starting VCT standings scrape...")
             teams_data = self.scrape_vct_standings()
-            if not teams_data:
-                logger.error("❌ Scraping failed, aborting database update")
-                return False
             
-            # Update database
-            success = self.update_database(teams_data)
-            
-            elapsed_time = time.time() - start_time
-            if success:
-                logger.info(f"🎉 Scrape completed successfully in {elapsed_time:.2f}s")
+            if teams_data and len(teams_data) >= 10:
+                logger.info(f"✅ Scrape successful: {len(teams_data)} teams found")
+                
+                # Log group distribution
+                alpha_count = len([t for t in teams_data if t['group_name'] == 'Alpha'])
+                omega_count = len([t for t in teams_data if t['group_name'] == 'Omega'])
+                logger.info(f"📊 Group distribution: Alpha={alpha_count}, Omega={omega_count}")
+                
+                return True
             else:
-                logger.error(f"❌ Scrape failed after {elapsed_time:.2f}s")
-            
-            return success
-            
+                logger.warning(f"⚠️ Scrape incomplete: only {len(teams_data) if teams_data else 0} teams found")
+                return False
+                
         except Exception as e:
-            elapsed_time = time.time() - start_time
-            logger.error(f"❌ Scrape crashed after {elapsed_time:.2f}s: {e}")
-            
-            # Update scraper health with error
-            try:
-                self.db.update_scraper_health(
-                    status='error',
-                    success_count=0,
-                    total_runs=1,
-                    error_message=str(e)
-                )
-            except:
-                pass
-            
+            logger.error(f"❌ Scrape failed: {e}")
             return False
 
     def inspect_vct_page(self, url):
-        """Inspect a VCT page to understand its structure"""
+        """Inspect VCT page structure for debugging"""
         try:
-            logger.info(f"🔍 Inspecting VCT page: {url}")
-            
-            response = self.scraper.get(url, timeout=30)
+            response = self.scraper.get(url)
             if response.status_code != 200:
-                logger.error(f"❌ Page returned status {response.status_code}")
+                logger.error(f"❌ Failed to fetch {url}: {response.status_code}")
                 return None
             
             soup = BeautifulSoup(response.content, 'html.parser')
+            logger.info(f"📄 Successfully fetched {url}")
             
-            # Look for page title
-            title = soup.find('title')
-            if title:
-                logger.info(f"📄 Page title: {title.get_text(strip=True)}")
+            # Find all tables
+            all_tables = soup.find_all('table')
+            logger.info(f"📊 Found {len(all_tables)} tables on the page")
             
-            # Look for event information
-            event_info = soup.find('div', class_='event-header') or soup.find('h1')
-            if event_info:
-                logger.info(f"🏆 Event info: {event_info.get_text(strip=True)}")
-            
-            # Look for standings tables
-            tables = soup.find_all('table')
-            logger.info(f"📊 Found {len(tables)} tables on page")
-            
-            for i, table in enumerate(tables):
-                logger.info(f"  Table {i+1}: class='{table.get('class', 'no-class')}'")
+            # Analyze each table
+            for i, table in enumerate(all_tables):
+                logger.info(f"🔍 Table {i + 1}:")
                 
-                # Check if it looks like a standings table
-                rows = table.find_all('tr')
-                if len(rows) > 1:
-                    first_row = rows[0]
-                    cells = first_row.find_all(['th', 'td'])
-                    headers = [cell.get_text(strip=True) for cell in cells]
-                    logger.info(f"    Headers: {headers}")
+                # Check if it's a standings table
+                is_standings = self.is_standings_table(table)
+                logger.info(f"  - Is standings table: {is_standings}")
+                
+                if is_standings:
+                    # Count rows
+                    rows = table.find_all('tr')
+                    logger.info(f"  - Rows: {len(rows)}")
                     
-                    # Check if this looks like team standings
-                    if any('team' in header.lower() for header in headers) or any('record' in header.lower() for header in headers):
-                        logger.info(f"    ✅ This looks like a standings table!")
+                    # Show headers
+                    if rows:
+                        headers = rows[0].find_all(['th', 'td'])
+                        header_texts = [h.get_text(strip=True) for h in headers]
+                        logger.info(f"  - Headers: {header_texts}")
                         
-                        # Look for group information
-                        group_info = self.find_group_indicators(table)
-                        logger.info(f"    🏷️ Group indicators: {group_info}")
+                        # Look for group indicators
+                        group_indicators = self.find_group_indicators(table)
+                        logger.info(f"  - Group indicators: {group_indicators}")
                         
-                        # Try to extract some sample data
+                        # Show sample data
                         if len(rows) > 1:
                             sample_row = rows[1]
-                            sample_cells = sample_row.find_all('td')
-                            if len(sample_cells) >= 3:
-                                team_cell = sample_cells[1] if len(sample_cells) > 1 else sample_cells[0]
-                                team_name = team_cell.get_text(strip=True)
-                                logger.info(f"    Sample team: {team_name}")
-                                
-                                # Show first few rows to understand structure
-                                logger.info(f"    📋 First 3 rows structure:")
-                                for j in range(min(3, len(rows))):
-                                    row_cells = rows[j].find_all('td')
-                                    row_text = [cell.get_text(strip=True) for cell in row_cells]
-                                    logger.info(f"      Row {j}: {row_text}")
-            
-            # Also look for any text that mentions groups
-            page_text = soup.get_text().lower()
-            if 'alpha' in page_text or 'omega' in page_text:
-                logger.info("🏷️ Found group references in page text")
-                if 'alpha' in page_text:
-                    logger.info("  - Alpha group mentioned")
-                if 'omega' in page_text:
-                    logger.info("  - Omega group mentioned")
+                            cells = sample_row.find_all('td')
+                            cell_texts = [c.get_text(strip=True) for c in cells]
+                            logger.info(f"  - Sample row: {cell_texts}")
             
             return soup
             
         except Exception as e:
-            logger.error(f"❌ Failed to inspect page: {e}")
+            logger.error(f"❌ Error inspecting VCT page: {e}")
             return None
 
     def analyze_vct_page_structure(self, url):
-        """Analyze the VCT page structure to understand the layout"""
+        """Analyze the overall VCT page structure"""
         try:
-            logger.info(f"🔍 Analyzing VCT page structure: {url}")
-            
-            response = self.scraper.get(url, timeout=30)
+            response = self.scraper.get(url)
             if response.status_code != 200:
-                logger.error(f"❌ Page returned status {response.status_code}")
+                logger.error(f"❌ Failed to fetch {url}: {response.status_code}")
                 return None
             
             soup = BeautifulSoup(response.content, 'html.parser')
+            logger.info(f"📄 Successfully fetched {url}")
             
-            # Look for all tables
-            all_tables = soup.find_all('table')
-            logger.info(f"📊 Found {len(all_tables)} total tables on page")
-            
-            # Look for any divs or sections that might contain group information
-            group_sections = soup.find_all(['div', 'section'], class_=lambda x: x and any(word in x.lower() for word in ['group', 'alpha', 'omega', 'standings']))
-            logger.info(f"🏷️ Found {len(group_sections)} potential group sections")
-            
-            for i, section in enumerate(group_sections):
-                section_text = section.get_text(strip=True)
-                if len(section_text) > 10:  # Only show sections with meaningful content
-                    logger.info(f"  Section {i+1}: {section_text[:100]}...")
-            
-            # Look for specific group indicators
+            # Get page text for analysis
             page_text = soup.get_text()
+            
+            # Count group mentions
             alpha_count = page_text.lower().count('alpha')
             omega_count = page_text.lower().count('omega')
             group_a_count = page_text.lower().count('group a')
             group_b_count = page_text.lower().count('group b')
             
-            logger.info(f"🏷️ Text analysis:")
-            logger.info(f"  - 'Alpha' mentioned: {alpha_count} times")
-            logger.info(f"  - 'Omega' mentioned: {omega_count} times")
-            logger.info(f"  - 'Group A' mentioned: {group_a_count} times")
-            logger.info(f"  - 'Group B' mentioned: {group_b_count} times")
+            logger.info(f"🏷️ Group mentions in page text:")
+            logger.info(f"  - Alpha: {alpha_count}")
+            logger.info(f"  - Omega: {omega_count}")
+            logger.info(f"  - Group A: {group_a_count}")
+            logger.info(f"  - Group B: {group_b_count}")
             
-            # Look for team names to understand the scope
-            team_indicators = ['team', 'sentinels', 'loud', '100 thieves', 'nrg', 'cloud9', 'mibr', 'leviatán', 'krü', 'furia', 'evil geniuses', 'g2 esports', 'shopify rebellion']
-            found_teams = []
+            # Find all tables
+            all_tables = soup.find_all('table')
+            logger.info(f"📊 Total tables found: {len(all_tables)}")
             
-            for indicator in team_indicators:
-                if indicator.lower() in page_text.lower():
-                    found_teams.append(indicator)
+            # Analyze each table
+            standings_tables = []
+            for i, table in enumerate(all_tables):
+                if self.is_standings_table(table):
+                    standings_tables.append(i)
+                    logger.info(f"✅ Table {i + 1} is a standings table")
+                else:
+                    logger.info(f"⏭️ Table {i + 1} is not a standings table")
             
-            logger.info(f"🏆 Found team references: {found_teams}")
+            logger.info(f"🎯 Standings tables found at indices: {[i+1 for i in standings_tables]}")
             
             return soup
             
         except Exception as e:
             logger.error(f"❌ Failed to analyze page structure: {e}")
             return None
+
+    def parse_standings_table(self, standings_table, group_name):
+        """Parse the standings table to extract team data"""
+        try:
+            teams_data = []
+            rows = standings_table.find_all('tr')[1:]  # Skip header row
+            
+            logger.info(f"🔍 Parsing {len(rows)} rows for {group_name} group")
+            
+            for i, row in enumerate(rows):
+                try:
+                    cells = row.find_all('td')
+                    if len(cells) < 4:  # Need at least 4 cells for team data
+                        logger.debug(f"⚠️ Row {i} has only {len(cells)} cells, skipping")
+                        continue
+                    
+                    # Extract team data - try multiple selectors
+                    team_element = (
+                        cells[1].find('div', class_='team-name') or
+                        cells[1].find('div', class_='event-group-team-name') or
+                        cells[1].find('span', class_='team-name') or
+                        cells[1].find('a', class_='team-name') or
+                        cells[0].find('div', class_='team-name') or  # Try first cell
+                        cells[0].find('div', class_='event-group-team-name') or
+                        cells[0].find('span', class_='team-name') or
+                        cells[0].find('a', class_='team-name')
+                    )
+                    
+                    if not team_element:
+                        logger.debug(f"⚠️ Row {i}: No team name found, skipping")
+                        continue
+                    
+                    team_name = team_element.get_text(strip=True)
+                    team_name = self.clean_team_name(team_name)
+                    
+                    # Try to find record in different positions
+                    record_cell = None
+                    for j in range(min(len(cells), 6)):
+                        cell_text = cells[j].get_text(strip=True)
+                        if '-' in cell_text or '–' in cell_text:
+                            record_cell = cell_text
+                            break
+                    
+                    if not record_cell:
+                        logger.debug(f"⚠️ Row {i}: No record found, skipping")
+                        continue
+                    
+                    # Try to find map differential
+                    map_diff_cell = None
+                    for j in range(min(len(cells), 6)):
+                        cell_text = cells[j].get_text(strip=True)
+                        if '/' in cell_text or '-' in cell_text:
+                            if cell_text != record_cell:  # Don't use the same cell as record
+                                map_diff_cell = cell_text
+                                break
+                    
+                    if not map_diff_cell:
+                        map_diff_cell = "0/0"  # Default value
+                    
+                    # Try to find round differential
+                    round_diff_cell = None
+                    for j in range(min(len(cells), 6)):
+                        cell_text = cells[j].get_text(strip=True)
+                        if '/' in cell_text or '-' in cell_text:
+                            if cell_text != record_cell and cell_text != map_diff_cell:
+                                round_diff_cell = cell_text
+                                break
+                    
+                    if not round_diff_cell:
+                        round_diff_cell = "0/0"  # Default value
+                    
+                    # Extract delta (round differential converted to number)
+                    try:
+                        if '/' in round_diff_cell:
+                            wins, losses = map(int, round_diff_cell.split('/'))
+                            delta = wins - losses
+                        elif '-' in round_diff_cell:
+                            wins, losses = map(int, round_diff_cell.split('-'))
+                            delta = wins - losses
+                        else:
+                            delta = 0.0
+                    except:
+                        delta = 0.0
+                    
+                    teams_data.append({
+                        'group_name': group_name,
+                        'team': team_name,
+                        'record': record_cell,
+                        'map_diff': map_diff_cell,
+                        'round_diff': round_diff_cell,
+                        'delta': delta
+                    })
+                    
+                    logger.info(f"✅ Scraped: {team_name} ({group_name}) - {record_cell}")
+                    
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to parse team row {i}: {e}")
+                    continue
+            
+            logger.info(f"📋 Successfully parsed {len(teams_data)} teams for {group_name} group")
+            return teams_data
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to parse standings table for {group_name}: {e}")
+            return []
