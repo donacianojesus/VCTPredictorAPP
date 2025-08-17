@@ -480,50 +480,59 @@ class MatchDatabase:
             conn.close()
     
     def insert_match_data(self, group, team, record, map_diff, round_diff, delta):
-        """
-        Insert or update a team's group standing record into the group_standings table.
-        
-        Args:
-            group (str): Group name (e.g. 'Alpha' or 'Omega')
-            team (str): Team name
-            record (str): Win-loss record (e.g. "3-1")
-            map_diff (str): Map differential (e.g. "6-2")
-            round_diff (str): Round differential (e.g. "92-60")
-            delta (float): Delta value
-        """
-        conn = self.get_connection()
-        cursor = conn.cursor()
-
+        """Insert or update match data for a team"""
         try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            # Check if team already exists in this group
             if self.is_postgres:
-                # PostgreSQL syntax
                 cursor.execute("""
-                    INSERT INTO group_standings 
-                    (group_name, team, record, map_diff, round_diff, delta, last_updated)
-                    VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                    ON CONFLICT (group_name, team) DO UPDATE SET
-                        record = EXCLUDED.record,
-                        map_diff = EXCLUDED.map_diff,
-                        round_diff = EXCLUDED.round_diff,
-                        delta = EXCLUDED.delta,
-                        last_updated = CURRENT_TIMESTAMP
-                """, (group, team, record, map_diff, round_diff, delta))
+                    SELECT id FROM group_standings 
+                    WHERE group_name = %s AND team = %s
+                """, (group, team))
             else:
-                # SQLite syntax
                 cursor.execute("""
-                    INSERT OR REPLACE INTO group_standings 
-                    (group_name, team, record, map_diff, round_diff, delta, last_updated)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (group, team, record, map_diff, round_diff, delta, datetime.now().isoformat()))
-
+                    SELECT id FROM group_standings 
+                    WHERE group_name = ? AND team = ?
+                """, (group, team))
+            
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Update existing record
+                if self.is_postgres:
+                    cursor.execute("""
+                        UPDATE group_standings 
+                        SET record = %s, map_diff = %s, round_diff = %s, delta = %s, last_updated = CURRENT_TIMESTAMP
+                        WHERE id = %s
+                    """, (record, map_diff, round_diff, delta, existing[0]))
+                else:
+                    cursor.execute("""
+                        UPDATE group_standings 
+                        SET record = ?, map_diff = ?, round_diff = ?, delta = ?, last_updated = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (record, map_diff, round_diff, delta, existing[0]))
+            else:
+                # Insert new record
+                if self.is_postgres:
+                    cursor.execute("""
+                        INSERT INTO group_standings (group_name, team, record, map_diff, round_diff, delta)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (group, team, record, map_diff, round_diff, delta))
+                else:
+                    cursor.execute("""
+                        INSERT INTO group_standings (group_name, team, record, map_diff, round_diff, delta)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """, (group, team, record, map_diff, round_diff, delta))
+            
             conn.commit()
-            logger.debug(f"Team data inserted/updated: {team} ({group})")
+            conn.close()
+            return True
             
         except Exception as e:
-            logger.error(f"Failed to insert team data: {e}")
-            raise
-        finally:
-            conn.close()
+            print(f"❌ Error inserting/updating match data: {e}")
+            return False
 
     def update_scraper_health(self, status, success_count=None, total_runs=None, error_message=None):
         """Update scraper health status"""
@@ -613,16 +622,126 @@ class MatchDatabase:
     def clear_all_teams(self):
         """Clear all team data from the database"""
         try:
-            with self.get_connection() as conn:
-                # Delete all records from group_standings table
-                result = conn.execute(text("DELETE FROM group_standings"))
-                conn.commit()
-                
-                print(f"🗑️ Cleared {result.rowcount} team records from database")
-                return True
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            # Delete all records from group_standings table
+            if self.is_postgres:
+                cursor.execute("DELETE FROM group_standings")
+            else:
+                cursor.execute("DELETE FROM group_standings")
+            
+            conn.commit()
+            conn.close()
+            
+            print(f"🗑️ Cleared all team records from database")
+            return True
                 
         except Exception as e:
             print(f"❌ Error clearing database: {e}")
+            return False
+
+    def reset_database(self):
+        """Completely reset the database by dropping and recreating tables"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            if self.is_postgres:
+                # Drop and recreate tables for PostgreSQL
+                cursor.execute("DROP TABLE IF EXISTS group_standings CASCADE")
+                cursor.execute("DROP TABLE IF EXISTS scraper_health CASCADE")
+                cursor.execute("DROP TABLE IF EXISTS data_updates CASCADE")
+                
+                # Recreate tables
+                cursor.execute("""
+                    CREATE TABLE group_standings (
+                        id SERIAL PRIMARY KEY,
+                        group_name VARCHAR(50) NOT NULL,
+                        team VARCHAR(100) NOT NULL,
+                        record VARCHAR(20) NOT NULL,
+                        map_diff VARCHAR(20) NOT NULL,
+                        round_diff VARCHAR(20) NOT NULL,
+                        delta REAL NOT NULL,
+                        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(group_name, team)
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE scraper_health (
+                        id SERIAL PRIMARY KEY,
+                        last_run TIMESTAMP,
+                        status VARCHAR(50) DEFAULT 'unknown',
+                        success_count INTEGER DEFAULT 0,
+                        total_runs INTEGER DEFAULT 0,
+                        last_error TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE data_updates (
+                        id SERIAL PRIMARY KEY,
+                        update_date DATE NOT NULL,
+                        matches_added INTEGER NOT NULL,
+                        status VARCHAR(50) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+            else:
+                # Drop and recreate tables for SQLite
+                cursor.execute("DROP TABLE IF EXISTS group_standings")
+                cursor.execute("DROP TABLE IF EXISTS scraper_health")
+                cursor.execute("DROP TABLE IF EXISTS data_updates")
+                
+                # Recreate tables
+                cursor.execute("""
+                    CREATE TABLE group_standings (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        group_name TEXT NOT NULL,
+                        team TEXT NOT NULL,
+                        record TEXT NOT NULL,
+                        map_diff TEXT NOT NULL,
+                        round_diff TEXT NOT NULL,
+                        delta REAL NOT NULL,
+                        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(group_name, team)
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE scraper_health (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        last_run TIMESTAMP,
+                        status TEXT DEFAULT 'unknown',
+                        success_count INTEGER DEFAULT 0,
+                        total_runs INTEGER DEFAULT 0,
+                        last_error TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE data_updates (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        update_date DATE NOT NULL,
+                        matches_added INTEGER NOT NULL,
+                        status TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+            
+            conn.commit()
+            conn.close()
+            
+            print(f"🔄 Database completely reset - all tables recreated")
+            return True
+                
+        except Exception as e:
+            print(f"❌ Error resetting database: {e}")
             return False
 
 # Usage example and testing

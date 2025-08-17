@@ -520,7 +520,7 @@ select:focus {
     flex-wrap: wrap;
 }
 
-.update-btn, .reset-btn {
+.update-btn, .reset-btn, .complete-reset-btn {
     padding: 12px 24px;
     border-radius: 25px;
     font-size: 1rem;
@@ -557,11 +557,23 @@ select:focus {
     background: linear-gradient(135deg, #c0392b, #a93226);
 }
 
-.update-btn:active, .reset-btn:active {
+.complete-reset-btn {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+}
+
+.complete-reset-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+    background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+.update-btn:active, .reset-btn:active, .complete-reset-btn:active {
     transform: translateY(0);
 }
 
-.update-btn:disabled, .reset-btn:disabled {
+.update-btn:disabled, .reset-btn:disabled, .complete-reset-btn:disabled {
     background: #bdc3c7;
     cursor: not-allowed;
     transform: none;

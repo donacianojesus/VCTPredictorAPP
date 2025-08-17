@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const updateBtn = document.getElementById('updateDataBtn');
     const resetBtn = document.getElementById('resetDataBtn');
+    const completeResetBtn = document.getElementById('completeResetBtn');
     const updateStatus = document.getElementById('updateStatus');
     
     if (updateBtn) {
@@ -29,6 +30,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (resetBtn) {
         resetBtn.addEventListener('click', function() {
             resetDatabase();
+        });
+    }
+    
+    if (completeResetBtn) {
+        completeResetBtn.addEventListener('click', function() {
+            completeResetDatabase();
         });
     }
     
@@ -118,6 +125,53 @@ document.addEventListener('DOMContentLoaded', function() {
             resetBtn.disabled = false;
             resetBtn.querySelector('.btn-text').style.display = 'inline';
             resetBtn.querySelector('.loading-spinner').style.display = 'none';
+        });
+    }
+    
+    function completeResetDatabase() {
+        // Confirm before complete reset
+        if (!confirm('⚠️ Are you sure you want to COMPLETELY reset the database? This will DROP and RECREATE all tables. This action cannot be undone and will lose ALL data.')) {
+            return;
+        }
+        
+        // Disable button and show loading
+        completeResetBtn.disabled = true;
+        completeResetBtn.querySelector('.btn-text').style.display = 'none';
+        completeResetBtn.querySelector('.loading-spinner').style.display = 'inline-block';
+        updateStatus.textContent = 'Completely resetting database...';
+        updateStatus.className = 'update-status info';
+        
+        // Make API call to completely reset database
+        fetch('/api/reset-database-complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateStatus.textContent = '✅ Database completely reset! All tables recreated.';
+                updateStatus.className = 'update-status success';
+                
+                // Refresh the page to show empty state
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                updateStatus.textContent = `❌ Complete reset failed: ${data.error || 'Unknown error'}`;
+                updateStatus.className = 'update-status error';
+            }
+        })
+        .catch(error => {
+            updateStatus.textContent = `❌ Complete reset failed: ${error.message}`;
+            updateStatus.className = 'update-status error';
+        })
+        .finally(() => {
+            // Re-enable button and hide loading
+            completeResetBtn.disabled = false;
+            completeResetBtn.querySelector('.btn-text').style.display = 'inline';
+            completeResetBtn.querySelector('.loading-spinner').style.display = 'none';
         });
     }
 });

@@ -475,6 +475,39 @@ def reset_database():
             'error': str(e)
         }), 500
 
+@main_bp.route('/api/reset-database-complete', methods=['POST'])
+def reset_database_complete():
+    """Completely reset the database by dropping and recreating tables"""
+    try:
+        # Check if database is available
+        db_available, message = check_db_available()
+        if not db_available:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 503
+        
+        # Complete database reset
+        success = current_app.db.reset_database()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Database completely reset. All tables recreated.',
+                'teams_count': 0
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to completely reset database'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @main_bp.route('/', methods=['GET', 'POST'])
 def index():
     """Main page with team selection and prediction"""

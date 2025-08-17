@@ -37,10 +37,11 @@ class VCTScraper:
         # Remove common suffixes and clean up
         team_name = team_name.strip()
         
-        # Remove country suffixes and other unwanted text
+        # Remove country suffixes and other unwanted text - be more aggressive
         suffixes_to_remove = [
             'United States', 'Brazil', 'Argentina', 'Chile', 'Mexico', 'Canada',
-            'Spoiler hidden', 'Spoiler', 'hidden', 'Esports', 'esports'
+            'Spoiler hidden', 'Spoiler', 'hidden', 'Esports', 'esports',
+            'UnitedStates', 'BrazilArgentina', 'ChileMexico', 'CanadaUnited'
         ]
         
         for suffix in suffixes_to_remove:
@@ -64,7 +65,9 @@ class VCTScraper:
             'g2': 'G2 Esports',
             'evil geniuses': 'Evil Geniuses',
             '100 thieves': '100 Thieves',
-            'sentinels': 'Sentinels'
+            'sentinels': 'Sentinels',
+            'visa kru': 'VISA KRÜ',
+            'visa krü': 'VISA KRÜ'
         }
         
         # Try exact match first
@@ -89,6 +92,10 @@ class VCTScraper:
                 return 'LOUD'
             elif team_name.upper() == 'FURIA':
                 return 'FURIA'
+            elif team_name.upper() == 'KRÜ':
+                return 'KRÜ'
+            elif team_name.upper() == 'LEVIATÁN':
+                return 'Leviatán'
             else:
                 # Standard capitalization
                 return team_name.title()
