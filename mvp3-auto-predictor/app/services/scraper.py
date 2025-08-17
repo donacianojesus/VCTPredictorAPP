@@ -50,21 +50,11 @@ class VCTScraper:
         try:
             logger.info("🌐 Starting VCT 2025 Stage 2 Americas standings scrape...")
             
-            # First, try to find the correct VCT 2025 URLs by searching
-            working_urls = self.find_vct_2025_urls()
-            
-            if working_urls:
-                logger.info(f"✅ Found {len(working_urls)} working VCT 2025 URLs")
-                vct_urls = working_urls
-            else:
-                logger.warning("⚠️ Could not find working VCT 2025 URLs, using fallback URLs")
-                # Fallback URLs to try
-                vct_urls = [
-                    "https://www.vlr.gg/event/standings/2025-americas-stage-2",
-                    "https://www.vlr.gg/event/standings/2025-americas-stage-1",
-                    "https://www.vlr.gg/event/standings/2024-americas-stage-2",
-                    "https://www.vlr.gg/event/standings/2024-americas-stage-1"
-                ]
+            # Use the correct VCT 2025 URLs discovered by the debug endpoint
+            vct_urls = [
+                "https://www.vlr.gg/event/2501/vct-2025-americas-stage-2",  # Stage 2 - Main tournament
+                "https://www.vlr.gg/event/2347/vct-2025-americas-stage-1",  # Stage 1 - Fallback
+            ]
             
             teams_data = []
             
@@ -158,9 +148,9 @@ class VCTScraper:
         """Create sample VCT 2025 Stage 2 Americas data for testing when scraping fails"""
         logger.info("📝 Creating sample VCT 2025 Stage 2 Americas data...")
         
-        # Updated teams for VCT 2025 Stage 2 Americas based on current information
+        # Updated teams for VCT 2025 Stage 2 Americas based on current tournament
         sample_teams = [
-            # Group Alpha - 2025 Stage 2 (Updated teams)
+            # Group Alpha - 2025 Stage 2 (Current teams)
             {'group_name': 'Alpha', 'team': 'Sentinels', 'record': '4-1', 'map_diff': '8/2', 'round_diff': '104/78', 'delta': 26.0},
             {'group_name': 'Alpha', 'team': 'LOUD', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '98/82', 'delta': 16.0},
             {'group_name': 'Alpha', 'team': '100 Thieves', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '92/88', 'delta': 4.0},
@@ -168,7 +158,7 @@ class VCTScraper:
             {'group_name': 'Alpha', 'team': 'Cloud9', 'record': '2-3', 'map_diff': '4/6', 'round_diff': '84/96', 'delta': -12.0},
             {'group_name': 'Alpha', 'team': 'MIBR', 'record': '1-4', 'map_diff': '2/8', 'round_diff': '76/104', 'delta': -28.0},
             
-            # Group Omega - 2025 Stage 2 (Updated teams)
+            # Group Omega - 2025 Stage 2 (Current teams)
             {'group_name': 'Omega', 'team': 'Leviatán', 'record': '4-1', 'map_diff': '8/2', 'round_diff': '102/76', 'delta': 26.0},
             {'group_name': 'Omega', 'team': 'KRÜ', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '96/84', 'delta': 12.0},
             {'group_name': 'Omega', 'team': 'FURIA', 'record': '3-2', 'map_diff': '6/4', 'round_diff': '94/86', 'delta': 8.0},
@@ -177,7 +167,7 @@ class VCTScraper:
             {'group_name': 'Omega', 'team': 'Shopify Rebellion', 'record': '1-4', 'map_diff': '2/8', 'round_diff': '78/102', 'delta': -24.0}
         ]
         
-        logger.info("📊 Sample data created with 12 teams (6 Alpha, 6 Omega)")
+        logger.info("📊 Sample data created with 12 teams (6 Alpha, 6 Omega) for VCT 2025 Stage 2")
         return sample_teams
     
     def parse_standings_table(self, standings_table, url):
@@ -186,10 +176,20 @@ class VCTScraper:
             teams_data = []
             rows = standings_table.find_all('tr')[1:]  # Skip header row
             
-            for row in rows:
+            # First, let's try to understand the table structure
+            if rows:
+                first_row = rows[0]
+                cells = first_row.find_all('td')
+                logger.info(f"🔍 Table structure: {len(cells)} columns")
+                
+                # Look for group indicators in the table
+                group_indicators = self.find_group_indicators(standings_table)
+                logger.info(f"🏷️ Group indicators found: {group_indicators}")
+            
+            for i, row in enumerate(rows):
                 try:
                     cells = row.find_all('td')
-                    if len(cells) < 6:
+                    if len(cells) < 4:  # Reduced minimum cells requirement
                         continue
                     
                     # Extract team data - try multiple selectors
@@ -197,7 +197,11 @@ class VCTScraper:
                         cells[1].find('div', class_='team-name') or
                         cells[1].find('div', class_='event-group-team-name') or
                         cells[1].find('span', class_='team-name') or
-                        cells[1].find('a', class_='team-name')
+                        cells[1].find('a', class_='team-name') or
+                        cells[0].find('div', class_='team-name') or  # Try first cell
+                        cells[0].find('div', class_='event-group-team-name') or
+                        cells[0].find('span', class_='team-name') or
+                        cells[0].find('a', class_='team-name')
                     )
                     
                     if not team_element:
@@ -206,23 +210,40 @@ class VCTScraper:
                     team_name = team_element.get_text(strip=True)
                     team_name = self.clean_team_name(team_name)
                     
-                    # Extract record (W-L format)
-                    record_cell = cells[2].get_text(strip=True)
-                    if '-' not in record_cell and '–' not in record_cell:
-                        continue
-                    record = record_cell
+                    # Try to find record in different positions
+                    record_cell = None
+                    for j in range(min(len(cells), 6)):
+                        cell_text = cells[j].get_text(strip=True)
+                        if '-' in cell_text or '–' in cell_text:
+                            record_cell = cell_text
+                            break
                     
-                    # Extract map differential
-                    map_diff_cell = cells[3].get_text(strip=True)
-                    if '/' not in map_diff_cell and '-' not in map_diff_cell:
+                    if not record_cell:
                         continue
-                    map_diff = map_diff_cell
                     
-                    # Extract round differential
-                    round_diff_cell = cells[4].get_text(strip=True)
-                    if '/' not in round_diff_cell and '-' not in round_diff_cell:
-                        continue
-                    round_diff = round_diff_cell
+                    # Try to find map differential
+                    map_diff_cell = None
+                    for j in range(min(len(cells), 6)):
+                        cell_text = cells[j].get_text(strip=True)
+                        if '/' in cell_text or '-' in cell_text:
+                            if cell_text != record_cell:  # Don't use the same cell as record
+                                map_diff_cell = cell_text
+                                break
+                    
+                    if not map_diff_cell:
+                        map_diff_cell = "0/0"  # Default value
+                    
+                    # Try to find round differential
+                    round_diff_cell = None
+                    for j in range(min(len(cells), 6)):
+                        cell_text = cells[j].get_text(strip=True)
+                        if '/' in cell_text or '-' in cell_text:
+                            if cell_text != record_cell and cell_text != map_diff_cell:
+                                round_diff_cell = cell_text
+                                break
+                    
+                    if not round_diff_cell:
+                        round_diff_cell = "0/0"  # Default value
                     
                     # Extract delta (round differential converted to number)
                     try:
@@ -237,27 +258,22 @@ class VCTScraper:
                     except:
                         delta = 0.0
                     
-                    # Determine group based on URL or position
-                    if '2025-americas-stage-2' in url:
-                        # For 2025 Stage 2, use actual group data if available
-                        group_name = self.determine_group_from_data(cells, len(teams_data))
-                    else:
-                        # Fallback to position-based grouping
-                        group_name = 'Alpha' if len(teams_data) < 6 else 'Omega'
+                    # Determine group - use better logic
+                    group_name = self.determine_group_better(i, len(teams_data), cells, group_indicators)
                     
                     teams_data.append({
                         'group_name': group_name,
                         'team': team_name,
-                        'record': record,
-                        'map_diff': map_diff,
-                        'round_diff': round_diff,
+                        'record': record_cell,
+                        'map_diff': map_diff_cell,
+                        'round_diff': round_diff_cell,
                         'delta': delta
                     })
                     
-                    logger.info(f"✅ Scraped: {team_name} ({group_name}) - {record}")
+                    logger.info(f"✅ Scraped: {team_name} ({group_name}) - {record_cell}")
                     
                 except Exception as e:
-                    logger.warning(f"⚠️ Failed to parse team row: {e}")
+                    logger.warning(f"⚠️ Failed to parse team row {i}: {e}")
                     continue
             
             return teams_data
@@ -266,28 +282,71 @@ class VCTScraper:
             logger.error(f"❌ Failed to parse standings table: {e}")
             return []
     
-    def determine_group_from_data(self, cells, team_index):
-        """Determine group name from table data or position"""
+    def find_group_indicators(self, table):
+        """Find group indicators in the table"""
+        indicators = []
         try:
-            # Try to find group information in the table
-            if len(cells) > 0:
-                # Look for group indicators in the first cell or header
-                first_cell = cells[0].get_text(strip=True)
-                if 'Alpha' in first_cell:
+            # Look for group headers or indicators
+            headers = table.find_all(['th', 'td'])
+            for header in headers:
+                text = header.get_text(strip=True).lower()
+                if 'alpha' in text or 'omega' in text or 'group a' in text or 'group b' in text:
+                    indicators.append(text)
+            
+            # Also look for any text that might indicate groups
+            all_text = table.get_text().lower()
+            if 'alpha' in all_text:
+                indicators.append('alpha')
+            if 'omega' in all_text:
+                indicators.append('omega')
+            if 'group a' in all_text:
+                indicators.append('group a')
+            if 'group b' in all_text:
+                indicators.append('group b')
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Error finding group indicators: {e}")
+        
+        return indicators
+    
+    def determine_group_better(self, row_index, teams_count, cells, group_indicators):
+        """Better group determination logic"""
+        try:
+            # First, try to find group info in the current row
+            for cell in cells:
+                cell_text = cell.get_text(strip=True).lower()
+                if 'alpha' in cell_text:
                     return 'Alpha'
-                elif 'Omega' in first_cell:
+                elif 'omega' in cell_text:
                     return 'Omega'
-                elif 'Group A' in first_cell:
+                elif 'group a' in cell_text:
                     return 'Alpha'
-                elif 'Group B' in first_cell:
+                elif 'group b' in cell_text:
                     return 'Omega'
             
-            # Fallback to position-based grouping
-            return 'Alpha' if team_index < 6 else 'Omega'
+            # If we have group indicators, use them to determine groups
+            if group_indicators:
+                if 'alpha' in group_indicators and 'omega' in group_indicators:
+                    # We have both groups, distribute teams evenly
+                    if teams_count < 6:
+                        return 'Alpha'
+                    else:
+                        return 'Omega'
+                elif 'alpha' in group_indicators:
+                    return 'Alpha'
+                elif 'omega' in group_indicators:
+                    return 'Omega'
             
-        except:
+            # Fallback: distribute teams evenly between Alpha and Omega
+            if teams_count < 6:
+                return 'Alpha'
+            else:
+                return 'Omega'
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Error determining group: {e}")
             # Final fallback
-            return 'Alpha' if team_index < 6 else 'Omega'
+            return 'Alpha' if teams_count < 6 else 'Omega'
     
     def update_database(self, teams_data):
         """Update database with scraped team data"""
@@ -412,6 +471,10 @@ class VCTScraper:
                     if any('team' in header.lower() for header in headers) or any('record' in header.lower() for header in headers):
                         logger.info(f"    ✅ This looks like a standings table!")
                         
+                        # Look for group information
+                        group_info = self.find_group_indicators(table)
+                        logger.info(f"    🏷️ Group indicators: {group_info}")
+                        
                         # Try to extract some sample data
                         if len(rows) > 1:
                             sample_row = rows[1]
@@ -420,6 +483,22 @@ class VCTScraper:
                                 team_cell = sample_cells[1] if len(sample_cells) > 1 else sample_cells[0]
                                 team_name = team_cell.get_text(strip=True)
                                 logger.info(f"    Sample team: {team_name}")
+                                
+                                # Show first few rows to understand structure
+                                logger.info(f"    📋 First 3 rows structure:")
+                                for j in range(min(3, len(rows))):
+                                    row_cells = rows[j].find_all('td')
+                                    row_text = [cell.get_text(strip=True) for cell in row_cells]
+                                    logger.info(f"      Row {j}: {row_text}")
+            
+            # Also look for any text that mentions groups
+            page_text = soup.get_text().lower()
+            if 'alpha' in page_text or 'omega' in page_text:
+                logger.info("🏷️ Found group references in page text")
+                if 'alpha' in page_text:
+                    logger.info("  - Alpha group mentioned")
+                if 'omega' in page_text:
+                    logger.info("  - Omega group mentioned")
             
             return soup
             
