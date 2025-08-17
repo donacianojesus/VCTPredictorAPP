@@ -421,7 +421,7 @@ class MatchDatabase:
         try:
             # Get all teams from group_standings table
             cursor.execute('''
-                SELECT group_name, team, record, map_diff, round_diff, delta, last_updated
+                SELECT id, group_name, team, record, map_diff, round_diff, delta, last_updated
                 FROM group_standings
                 ORDER BY group_name, delta DESC
             ''')
@@ -430,7 +430,7 @@ class MatchDatabase:
             team_list = []
             
             for row in rows:
-                group_name, team, record, map_diff, round_diff, delta, last_updated = row
+                team_id, group_name, team, record, map_diff, round_diff, delta, last_updated = row
                 
                 # Parse the record to get wins and losses
                 # Record format is like "4-0" or "3–1" (wins-losses)
@@ -457,6 +457,7 @@ class MatchDatabase:
                 
                 # Create team entry with all required info
                 team_entry = {
+                    'id': team_id,
                     'team': team,
                     'group_name': group_name,
                     'record': record,

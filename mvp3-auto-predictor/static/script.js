@@ -11,6 +11,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const team2Select = document.getElementById('team2');
     const predictBtn = document.querySelector('.predict-btn');
     
+    // Debug: Log all found elements
+    console.log('🔍 Found elements:', {
+        updateBtn: !!updateBtn,
+        resetBtn: !!resetBtn,
+        completeResetBtn: !!completeResetBtn,
+        updateStatus: !!updateStatus,
+        team1Select: !!team1Select,
+        team2Select: !!team2Select,
+        predictBtn: !!predictBtn
+    });
+    
     // Update Data Button Functionality
     if (updateBtn) {
         updateBtn.addEventListener('click', function() {
@@ -35,6 +46,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Team Selection Validation
     if (team1Select && team2Select && predictBtn) {
         console.log('✅ Team selection elements found, setting up validation');
+        console.log('🎯 Predict button found:', predictBtn);
+        console.log('🎯 Team1 select found:', team1Select);
+        console.log('🎯 Team2 select found:', team2Select);
         
         // Function to validate team selection
         function validateTeamSelection() {
@@ -42,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const team2Value = team2Select.value;
             
             console.log('🔍 Validating teams:', team1Value, team2Value);
+            console.log('🔍 Button current state:', predictBtn.disabled);
             
             if (team1Value && team2Value) {
                 if (team1Value === team2Value) {
@@ -58,13 +73,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 predictBtn.disabled = true;
                 predictBtn.title = 'Please select two teams';
             }
+            
+            console.log('🔍 Button final state:', predictBtn.disabled);
         }
         
         // Add event listeners
-        team1Select.addEventListener('change', validateTeamSelection);
-        team2Select.addEventListener('change', validateTeamSelection);
+        team1Select.addEventListener('change', function() {
+            console.log('🔄 Team1 changed to:', this.value);
+            validateTeamSelection();
+        });
+        team2Select.addEventListener('change', function() {
+            console.log('🔄 Team2 changed to:', this.value);
+            validateTeamSelection();
+        });
         
         // Initial validation
+        console.log('🚀 Running initial validation...');
         validateTeamSelection();
         
         // Debug: Log all options
@@ -73,8 +97,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const option = team1Select.options[i];
             console.log(`  Option ${i}: "${option.text}" - Value: "${option.value}"`);
         }
+        
+        // Test: Manually trigger validation after a delay
+        setTimeout(() => {
+            console.log('⏰ Delayed validation test...');
+            validateTeamSelection();
+        }, 1000);
+        
     } else {
         console.log('⚠️ Team selection elements not found');
+        if (!team1Select) console.log('❌ team1Select not found');
+        if (!team2Select) console.log('❌ team2Select not found');
+        if (!predictBtn) console.log('❌ predictBtn not found');
+        
+        // Try alternative selectors
+        const altPredictBtn = document.querySelector('button[type="submit"]');
+        console.log('🔍 Alternative button selector:', altPredictBtn);
+        
+        const altPredictBtn2 = document.querySelector('.prediction-form button');
+        console.log('🔍 Alternative button selector 2:', altPredictBtn2);
     }
     
     // Update VCT Data Function

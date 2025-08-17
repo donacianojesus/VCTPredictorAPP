@@ -21,6 +21,8 @@ def check_db_available():
         return False, "Database not available"
     return True, "Database available"
 
+
+
 def run_auto_scraper():
     """Run the scraper in a background thread"""
     try:
