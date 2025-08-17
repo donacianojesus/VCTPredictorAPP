@@ -12,10 +12,28 @@ import json
 # Create blueprint
 main_bp = Blueprint('main', __name__)
 
+def check_db_available():
+    """Check if database is available"""
+    if not current_app.db:
+        return False, "Database not available"
+    return True, "Database available"
+
 @main_bp.route('/api/health')
 def api_health():
     """API endpoint to get scraper health status"""
     try:
+        # Check if database is available
+        db_available, message = check_db_available()
+        if not db_available:
+            return jsonify({
+                'status': 'error',
+                'message': message,
+                'last_run': None,
+                'success_count': 0,
+                'total_runs': 0,
+                'success_rate': 0
+            }), 503
+        
         # Get health status from database
         health_data = current_app.db.get_scraper_health()
         
@@ -46,6 +64,14 @@ def api_health():
 def init_database():
     """Initialize database with sample data (for Railway deployment)"""
     try:
+        # Check if database is available
+        db_available, message = check_db_available()
+        if not db_available:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 503
+        
         # Sample team data for VCT Americas
         sample_teams = [
             # Group Alpha
@@ -102,6 +128,19 @@ def init_database():
 @main_bp.route('/', methods=['GET', 'POST'])
 def index():
     """Main page with team selection and predictions"""
+    # Check if database is available
+    db_available, message = check_db_available()
+    if not db_available:
+        return render_template(
+            'index.html',
+            teams_by_group={'Alpha': [], 'Omega': []},
+            selected_team1=None,
+            selected_team2=None,
+            prediction=None,
+            error_message=f"Database not available: {message}",
+            last_updated=None
+        )
+    
     # Get all teams with their stats and group info
     teams_with_stats = current_app.db.get_all_teams_with_stats()
     

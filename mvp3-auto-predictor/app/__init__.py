@@ -28,17 +28,26 @@ def create_app(config_class=None):
     # Get database connection string
     database_url = os.environ.get('DATABASE_URL', config_class.DATABASE_PATH)
     
-    # Initialize extensions
-    db = MatchDatabase(database_url)
-    predictor = DynamicPredictor(database_url)
+    # Initialize extensions with error handling
+    try:
+        db = MatchDatabase(database_url)
+        predictor = DynamicPredictor(database_url)
+        
+        # Store instances in app context
+        app.db = db
+        app.predictor = predictor
+        
+        print(f"✅ Database and predictor initialized successfully")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not initialize database/predictor: {e}")
+        print("App will start but database features may not work")
+        # Set to None so routes can handle gracefully
+        app.db = None
+        app.predictor = None
     
     # Register blueprints
     from app.routes import main_bp
     app.register_blueprint(main_bp)
-    
-    # Store instances in app context
-    app.db = db
-    app.predictor = predictor
     
     return app
 
