@@ -56,7 +56,7 @@ VCT Predictor Architecture
     └── 99.9% uptime SLA
 ```
 
-## 🛠**Technology Stack**
+##**Technology Stack**
 
 ### **Backend & API**
 - **Python 3.8+** - Core application logic
