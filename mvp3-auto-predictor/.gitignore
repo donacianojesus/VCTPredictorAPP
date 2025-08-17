@@ -46,6 +46,7 @@ scraper.log
 .env
 .env.local
 .env.production
+.env.railway
 
 # IDE
 .vscode/
@@ -68,9 +69,6 @@ Thumbs.db
 *.temp
 debug.html
 
-# Production files (keep these in git)
-# Procfile
-# requirements.txt
-# app.json
-# wsgi.py
-# config.py
+# Railway specific
+.railway/
+railway.log

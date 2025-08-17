@@ -1,1 +1,0 @@
-web: cd mvp3-auto-predictor && gunicorn wsgi:app

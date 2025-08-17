@@ -1,13 +1,13 @@
 team,wins,losses,group
-Cloud9,2,0,A
-Sentinels,2,0,A
-G2 Esports,1,1,A
-Evil Geniuses,1,1,A
-2Game Esports,0,2,A
-FURIA,0,2,A
-100 Thieves,2,0,B
-LEVIATAN,1,1,B
-NRG,1,1,B
-KRU Esports,1,1,B
-LOUD,1,1,B
-MIBR,0,2,B
+Cloud9,2,1,A
+Sentinels,3,0,A
+G2 Esports,2,1,A
+Evil Geniuses,1,2,A
+2Game Esports,1,2,A
+FURIA,0,3,A
+100 Thieves,2,1,B
+LEVIATAN,1,2,B
+NRG,2,1,B
+KRU Esports,2,1,B
+LOUD,1,2,B
+MIBR,1,2,B
