@@ -118,6 +118,34 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🔍 Alternative button selector 2:', altPredictBtn2);
     }
     
+    // Debug: Check loading spinner states on page load
+    console.log('🔍 Checking loading spinner states on page load...');
+    const allLoadingSpinners = document.querySelectorAll('.loading-spinner');
+    console.log(`Found ${allLoadingSpinners.length} loading spinners`);
+    
+    allLoadingSpinners.forEach((spinner, index) => {
+        const isVisible = spinner.style.display !== 'none';
+        console.log(`Spinner ${index}: visible=${isVisible}, display=${spinner.style.display}`);
+        
+        // Ensure all spinners are hidden on page load
+        if (isVisible) {
+            console.log(`🔄 Hiding spinner ${index} on page load`);
+            spinner.style.display = 'none';
+        }
+    });
+    
+    // Debug: Check button states on page load
+    console.log('🔍 Checking button states on page load...');
+    if (updateBtn) {
+        const updateBtnText = updateBtn.querySelector('.btn-text');
+        const updateBtnSpinner = updateBtn.querySelector('.loading-spinner');
+        console.log('Update button:', {
+            disabled: updateBtn.disabled,
+            textVisible: updateBtnText.style.display !== 'none',
+            spinnerVisible: updateBtnSpinner.style.display !== 'none'
+        });
+    }
+    
     // Update VCT Data Function
     function updateVCTData() {
         if (!updateBtn) return;
