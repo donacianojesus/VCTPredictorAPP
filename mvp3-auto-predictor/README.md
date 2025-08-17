@@ -1,4 +1,4 @@
-# 🎯 VCT Predictor - Professional Valorant Match Prediction System
+# VCT Predictor - Professional Valorant Match Prediction System
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-2.0+-green.svg)](https://flask.palletsprojects.com)
@@ -10,7 +10,7 @@
 
 A **production-ready web application** that predicts Valorant Champions Tour (VCT) match outcomes using real-time data scraping, statistical analysis, and machine learning principles. Built with modern web technologies and deployed on Railway for 99.9% uptime.
 
-## 🚀 **Key Features**
+## **Key Features**
 
 ### **Core Functionality**
 - **Real-time VCT Data Scraping** - Automated daily updates from VLR.gg
@@ -31,32 +31,32 @@ A **production-ready web application** that predicts Valorant Champions Tour (VC
 - **Confidence Scoring** - Statistical confidence levels for predictions
 - **Historical Data Tracking** - Match history and performance trends
 
-## 🏗️ **Architecture Overview**
+## **Architecture Overview**
 
 ```
 VCT Predictor Architecture
-├── 🌐 Frontend Layer
+├── Frontend Layer
 │   ├── Responsive HTML5/CSS3 UI
 │   ├── Vanilla JavaScript (ES6+)
 │   └── Real-time data updates
-├── 🔧 Backend Layer  
+├── Backend Layer  
 │   ├── Flask 2.0+ Web Framework
 │   ├── RESTful API endpoints
 │   ├── Background task scheduler
 │   └── Error handling & logging
-├── 🗄️ Data Layer
+├── 🗄Data Layer
 │   ├── PostgreSQL (Production)
 │   ├── SQLite (Development)
 │   ├── Automated data scraping
 │   └── Health monitoring tables
-└── ☁️ Infrastructure
+└── ☁Infrastructure
     ├── Railway deployment
     ├── Gunicorn WSGI server
     ├── Auto-scaling capabilities
     └── 99.9% uptime SLA
 ```
 
-## 🛠️ **Technology Stack**
+## 🛠**Technology Stack**
 
 ### **Backend & API**
 - **Python 3.8+** - Core application logic
@@ -83,7 +83,7 @@ VCT Predictor Architecture
 - **Environment management** - Production/development configs
 - **Health monitoring** - Real-time system status
 
-## 📊 **Data Sources & Prediction Algorithm**
+## **Data Sources & Prediction Algorithm**
 
 ### **Data Collection Strategy**
 - **Primary Source**: VLR.gg (Official VCT standings)
@@ -104,7 +104,7 @@ Our system uses **advanced statistical analysis** to predict match outcomes:
 - Team B: 60% win rate, -5 map differential
 - **Prediction**: Team A wins with 65.2% confidence
 
-## 🚀 **Quick Start**
+## **Quick Start**
 
 ### **Prerequisites**
 - Python 3.8+
@@ -143,7 +143,7 @@ railway variables set FLASK_ENV=production
 railway variables set DATABASE_URL=your_postgresql_url
 ```
 
-## 📁 **Project Structure**
+## **Project Structure**
 
 ```
 vct-predictor/
@@ -173,7 +173,7 @@ vct-predictor/
 └── README.md                 # This file
 ```
 
-## 🔌 **API Endpoints**
+## **API Endpoints**
 
 ### **Core Endpoints**
 - `GET /` - Main application interface
@@ -188,7 +188,7 @@ vct-predictor/
 - **Error Tracking**: Comprehensive error logging and reporting
 - **Performance Metrics**: Success rates and response times
 
-## 🧪 **Testing & Quality Assurance**
+## **Testing & Quality Assurance**
 
 ### **Testing Strategy**
 - **Unit Tests**: Core functionality validation
@@ -202,7 +202,7 @@ vct-predictor/
 - **Logging**: Structured logging for debugging
 - **Documentation**: Inline code documentation
 
-## 📈 **Performance & Scalability**
+## **Performance & Scalability**
 
 ### **Current Metrics**
 - **Response Time**: <200ms average
@@ -216,7 +216,7 @@ vct-predictor/
 - **Caching Strategy**: Intelligent data caching
 - **Auto-scaling**: Railway platform capabilities
 
-## 🔒 **Security & Reliability**
+## **Security & Reliability**
 
 ### **Security Measures**
 - **Input Validation**: Comprehensive form validation
@@ -230,7 +230,7 @@ vct-predictor/
 - **Health Monitoring**: Proactive issue detection
 - **Graceful Degradation**: Service continuity
 
-## 🚀 **Deployment & DevOps**
+## **Deployment & DevOps**
 
 ### **Railway Deployment**
 - **Automatic Scaling**: Based on traffic demands
@@ -244,7 +244,7 @@ vct-predictor/
 - **Health Checks**: Post-deployment verification
 - **Rollback Capability**: Quick issue resolution
 
-## 📊 **Monitoring & Analytics**
+## **Monitoring & Analytics**
 
 ### **System Health Dashboard**
 - **Real-time Metrics**: Live system performance data
@@ -258,7 +258,7 @@ vct-predictor/
 - **Escalation Procedures**: Timely issue resolution
 - **Historical Analysis**: Trend identification and optimization
 
-## 🤝 **Contributing**
+## **Contributing**
 
 ### **Development Guidelines**
 - **Code Style**: PEP 8 compliance
@@ -272,26 +272,12 @@ vct-predictor/
 - **Performance Issues**: Metrics and benchmarks
 - **Security Concerns**: Responsible disclosure
 
-## 📄 **License**
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 **Acknowledgments**
+## **Acknowledgments**
 
 - **VLR.gg** - Tournament data source
 - **Valorant Esports** - Game and tournament information
 - **Flask Community** - Web framework and ecosystem
 - **Railway Team** - Deployment platform and support
-
-## 📞 **Contact & Support**
-
-- **Project Issues**: [GitHub Issues](https://github.com/yourusername/vct-predictor/issues)
-- **Documentation**: [Project Wiki](https://github.com/yourusername/vct-predictor/wiki)
-- **Live Demo**: [https://vctpredictorapp-production.up.railway.app](https://vctpredictorapp-production.up.railway.app)
-
----
-
-**Built with ❤️ for the Valorant esports community**
 
 *This project demonstrates professional full-stack development capabilities, including real-time data processing, cloud deployment, and production-grade web application architecture.*
 
