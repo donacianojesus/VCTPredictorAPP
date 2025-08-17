@@ -59,23 +59,50 @@ def api_health():
                 'success_rate': 0
             }), 503
         
-        # Get health status from database
-        health_data = current_app.db.get_scraper_health()
-        
-        # Calculate success rate
-        success_rate = 0
-        if health_data['total_runs'] > 0:
-            success_rate = (health_data['success_count'] / health_data['total_runs']) * 100
-        
-        return jsonify({
-            'status': health_data['status'],
-            'message': 'Health data from database',
-            'last_run': health_data['last_run'].isoformat() if health_data['last_run'] else None,
-            'success_count': health_data['success_count'],
-            'total_runs': health_data['total_runs'],
-            'success_rate': round(success_rate, 1)
-        })
+        # Try to get health status from database
+        try:
+            health_data = current_app.db.get_scraper_health()
+            
+            # Check if we have valid health data
+            if health_data and health_data.get('total_runs', 0) > 0:
+                # Calculate success rate
+                success_rate = 0
+                if health_data['total_runs'] > 0:
+                    success_rate = (health_data['success_count'] / health_data['total_runs']) * 100
+                
+                return jsonify({
+                    'status': health_data['status'],
+                    'message': 'Health data from database',
+                    'last_run': health_data['last_run'].isoformat() if health_data['last_run'] else None,
+                    'success_count': health_data['success_count'],
+                    'total_runs': health_data['total_runs'],
+                    'success_rate': round(success_rate, 1)
+                })
+            else:
+                # No health data yet, return default status
+                return jsonify({
+                    'status': 'initializing',
+                    'message': 'Scraper health monitoring not yet initialized',
+                    'last_run': None,
+                    'success_count': 0,
+                    'total_runs': 0,
+                    'success_rate': 0
+                })
+                
+        except Exception as db_error:
+            print(f"⚠️ Could not get scraper health from database: {db_error}")
+            # Return default status if database query fails
+            return jsonify({
+                'status': 'unknown',
+                'message': 'Health monitoring not available',
+                'last_run': None,
+                'success_count': 0,
+                'total_runs': 0,
+                'success_rate': 0
+            })
+            
     except Exception as e:
+        print(f"❌ Health endpoint error: {e}")
         return jsonify({
             'status': 'error',
             'message': f'Failed to load health data: {str(e)}',
@@ -102,10 +129,30 @@ def run_scraper():
             from app.services.scraper import VCTScraper
             current_app.scraper_service = VCTScraper()
         
+        # Update health status to running
+        try:
+            current_app.db.update_scraper_health(
+                status='running',
+                success_count=0,
+                total_runs=1
+            )
+        except Exception as e:
+            print(f"⚠️ Could not update scraper health: {e}")
+        
         # Run the scraper
         success = current_app.scraper_service.run_scrape()
         
         if success:
+            # Update health status to success
+            try:
+                current_app.db.update_scraper_health(
+                    status='success',
+                    success_count=1,
+                    total_runs=1
+                )
+            except Exception as e:
+                print(f"⚠️ Could not update scraper health: {e}")
+            
             # Get updated team count
             try:
                 teams_with_stats = current_app.db.get_all_teams_with_stats()
@@ -119,12 +166,34 @@ def run_scraper():
                 'teams_count': teams_count
             })
         else:
+            # Update health status to failed
+            try:
+                current_app.db.update_scraper_health(
+                    status='failed',
+                    success_count=0,
+                    total_runs=1,
+                    error_message='Scraper failed to complete'
+                )
+            except Exception as e:
+                print(f"⚠️ Could not update scraper health: {e}")
+            
             return jsonify({
                 'success': False,
                 'error': 'Scraper failed to complete'
             }), 500
             
     except Exception as e:
+        # Update health status to error
+        try:
+            current_app.db.update_scraper_health(
+                status='error',
+                success_count=0,
+                total_runs=1,
+                error_message=str(e)
+            )
+        except Exception as health_error:
+            print(f"⚠️ Could not update scraper health: {health_error}")
+        
         return jsonify({
             'success': False,
             'error': str(e)

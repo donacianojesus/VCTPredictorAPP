@@ -112,14 +112,51 @@ class MatchDatabase:
                 """)
             
             conn.commit()
-            logger.debug(f"Database initialized at {self.db_path}")
+            
+            # Initialize basic health data if table is empty
+            self.init_basic_health_data()
             
         except Exception as e:
-            logger.error(f"Database initialization failed: {str(e)}")
-            raise
-            
+            logger.error(f"Failed to initialize database: {e}")
+            conn.rollback()
         finally:
             conn.close()
+    
+    def init_basic_health_data(self):
+        """Initialize basic health data if the scraper_health table is empty"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            # Check if health table has any data
+            if self.is_postgres:
+                cursor.execute("SELECT COUNT(*) FROM scraper_health")
+            else:
+                cursor.execute("SELECT COUNT(*) FROM scraper_health")
+            
+            count = cursor.fetchone()[0]
+            
+            if count == 0:
+                # Insert initial health data
+                if self.is_postgres:
+                    cursor.execute("""
+                        INSERT INTO scraper_health (status, success_count, total_runs, last_run, created_at, updated_at)
+                        VALUES ('initializing', 0, 0, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """)
+                else:
+                    cursor.execute("""
+                        INSERT INTO scraper_health (status, success_count, total_runs, last_run, created_at, updated_at)
+                        VALUES ('initializing', 0, 0, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """)
+                
+                conn.commit()
+                print("✅ Initialized basic health data")
+            
+            conn.close()
+            
+        except Exception as e:
+            print(f"⚠️ Could not initialize basic health data: {e}")
+            # Don't fail the entire initialization for this
     
     def insert_match(self, match_data):
         """
