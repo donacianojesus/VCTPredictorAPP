@@ -44,19 +44,19 @@ VCT Predictor Architecture
 │   ├── RESTful API endpoints
 │   ├── Background task scheduler
 │   └── Error handling & logging
-├── 🗄Data Layer
+├── Data Layer
 │   ├── PostgreSQL (Production)
 │   ├── SQLite (Development)
 │   ├── Automated data scraping
 │   └── Health monitoring tables
-└── ☁Infrastructure
+└── Infrastructure
     ├── Railway deployment
     ├── Gunicorn WSGI server
     ├── Auto-scaling capabilities
     └── 99.9% uptime SLA
 ```
 
-## 🛠**Technology Stack**
+##**Technology Stack**
 
 ### **Backend & API**
 - **Python 3.8+** - Core application logic
