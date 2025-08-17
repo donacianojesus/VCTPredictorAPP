@@ -103,7 +103,7 @@ export SECRET_KEY=your_secret_key
 - `config/production.py` - Production settings
 - `config/base.py` - Base configuration
 
-## 📊 Data Sources & Prediction Method
+## Data Sources & Prediction Method
 
 ### **Data Collection**
 - **VLR.gg**: Official VCT standings and statistics
@@ -122,7 +122,7 @@ Our prediction system uses **statistical analysis**, not machine learning:
 - Team A predicted winner with 57% confidence
 - Team B has 43% chance to win
 
-## 🚀 Deployment
+## Deployment
 
 ### Railway (Recommended)
 ```bash
@@ -143,7 +143,7 @@ The application includes a separate Railway scraper service for automated data u
 
 See `docs/RAILWAY_SCRAPER_SETUP.md` for detailed setup instructions.
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run tests
@@ -165,13 +165,13 @@ python3 -m pytest --cov=app tests/
 - `GET /api/health` - System health status
 - `POST /api/init-db` - Initialize database with sample data
 
-## 📚 Documentation
+## Documentation
 
 - `RAILWAY_DEPLOYMENT.md` - Complete Railway deployment guide
 - `RAILWAY_SCRAPER_SETUP.md` - Scraper service configuration
 - `PROJECT_STRUCTURE.md` - Detailed project architecture
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 1. **Database Connection**: Ensure `DATABASE_URL` is set correctly
@@ -184,18 +184,3 @@ python3 -m pytest --cov=app tests/
 railway logs
 ```
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-**Built with ❤️ for the Valorant community**
