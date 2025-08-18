@@ -132,17 +132,6 @@ python scripts/init_db.py
 python app/__init__.py
 ```
 
-### **Production Deployment**
-```bash
-# Deploy to Railway
-railway login
-railway up
-
-# Set environment variables
-railway variables set FLASK_ENV=production
-railway variables set DATABASE_URL=your_postgresql_url
-```
-
 ## **Project Structure**
 
 ```
