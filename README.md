@@ -261,6 +261,45 @@ vct-predictor/
 - **Performance Issues**: Metrics and benchmarks
 - **Security Concerns**: Responsible disclosure
 
+---
+
+## **Future Enhancements**
+
+Planned upgrades to expand functionality and user experience:
+
+### **Step 1: Frontend Migration**
+- Move UI from HTML/CSS/Vanilla JS → **React** (MatchCard, RegionSelector, Charts).  
+- Use **Axios** for API calls and **React Router** for navigation.  
+
+### **Step 2: Backend Upgrade**
+- Transition from Flask → **Node.js + Express**.  
+- Add **JWT authentication** for secure user accounts.  
+
+### **Step 3: Multi-Region & Upcoming Tournaments**
+- Scraper extended to cover **Group Stage, Playoffs, Masters, and Champions**.  
+- Region filters: **Americas, EMEA, Pacific, China**.  
+
+### **Step 4: Machine Learning Integration**
+- Train ML model (Logistic Regression / XGBoost) on historical match data.  
+- Deploy ML as a microservice → `/predict-match` endpoint.  
+- Trigger predictions automatically after scraper updates.  
+
+### **Step 5: User Accounts & Dashboard**
+- **User registration/login** system.  
+- Personalized dashboard → favorite teams, prediction history, upcoming matches.  
+
+### **Step 6: Real-Time Updates**
+- Implement **WebSockets** for live match scores and prediction updates.  
+
+### **Step 7: Independent Deployment & Custom Domain**
+- Host **frontend + backend** on VPS (AWS/DigitalOcean/Render).  
+- Deploy PostgreSQL (managed DB or self-hosted).  
+- Configure **custom domain + SSL** (Namecheap + Let’s Encrypt).  
+- CI/CD pipelines via **GitHub Actions**.  
+- Add **logging, monitoring, and uptime alerts** for reliability.  
+
+---
+
 ## **Acknowledgments**
 
 - **VLR.gg** - Tournament data source
