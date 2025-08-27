@@ -6,7 +6,6 @@
 [![Railway](https://img.shields.io/badge/Deployed-Railway-purple.svg)](https://railway.app)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Live Demo**: [https://vctpredictorapp-production.up.railway.app](https://vctpredictorapp-production.up.railway.app)
 
 A **production-ready web application** that predicts Valorant Champions Tour (VCT) match outcomes using real-time data scraping, statistical analysis, and machine learning principles. Built with modern web technologies and deployed on Railway for 99.9% uptime.
 
